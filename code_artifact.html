@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>三菱專案申請單</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter & Noto Sans TC -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <style>
+    body {
+      font-family: 'Inter', 'Noto Sans TC', sans-serif;
+    }
+    @media print {
+      .no-print {
+        display: none !important;
+      }
+      body {
+        background-color: #ffffff;
+      }
+      .print-border-none {
+        border: none !important;
+        box-shadow: none !important;
+      }
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col antialiased">
+
+  <!-- Top Navigation Header -->
+  <header class="bg-slate-900 text-white shadow sticky top-0 z-40 no-print">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <!-- Mitsubishi Iconic 3-Diamond Mark in SVG -->
+        <div class="w-7 h-7 flex items-center justify-center">
+          <svg viewBox="0 0 100 100" class="w-6 h-6 fill-red-600">
+            <polygon points="50,15 62,35 50,55 38,35" />
+            <polygon points="65,42 85,42 75,60 55,60" />
+            <polygon points="35,42 15,42 25,60 45,60" />
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-base sm:text-lg font-bold tracking-wide">三菱專案申請單</h1>
+          <p class="text-xs text-slate-400">專案報備與特價審查線上申請</p>
+        </div>
+      </div>
+      <div class="flex items-center space-x-2">
+        <button id="btnExportCSVHeader" type="button" class="inline-flex items-center px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-semibold rounded-md shadow-sm transition">
+          <i class="fa-solid fa-file-csv mr-1.5 text-base"></i>匯出 CSV
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Form Content -->
+  <main class="flex-grow max-w-5xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+    
+    <!-- Notification Toast Box -->
+    <div id="toastMessage" class="hidden mb-4 p-3 rounded-lg flex items-center justify-between text-sm transition-all shadow-sm">
+      <div class="flex items-center space-x-2">
+        <i id="toastIcon"></i>
+        <span id="toastText"></span>
+      </div>
+      <button type="button" onclick="hideToast()" class="text-slate-400 hover:text-slate-600 ml-4">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <!-- Application Form Card -->
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 sm:p-8 print-border-none">
+      
+      <!-- Form Document Title Area -->
+      <div class="border-b border-slate-200 pb-4 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h2 class="text-xl sm:text-2xl font-bold text-slate-900 flex items-center gap-2">
+            <span class="w-2 h-6 bg-red-600 rounded"></span>
+            三菱專案申請單
+          </h2>
+          <p class="text-xs text-slate-500 mt-1">請確實填寫專案情報、競爭資訊與申請機種品項</p>
+        </div>
+        <div class="flex items-center space-x-2 no-print self-end sm:self-auto">
+          <button type="button" onclick="window.print()" class="inline-flex items-center px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded border border-slate-300 transition">
+            <i class="fa-solid fa-print mr-1"></i>列印
+          </button>
+          <button id="btnExportCSV" type="button" class="inline-flex items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg shadow-sm transition">
+            <i class="fa-solid fa-file-csv mr-1.5 text-base"></i>匯出 CSV
+          </button>
+        </div>
+      </div>
+
+      <form id="projectAppForm" onsubmit="return false;">
+        
+        <!-- 區塊一：基本專案資料 -->
+        <div class="mb-6">
+          <h3 class="text-sm font-semibold text-slate-800 bg-slate-50 px-3 py-2 rounded border-l-4 border-red-600 mb-4">
+            一、專案背景資料
+          </h3>
+          
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">經銷商 / 客戶名稱 <span class="text-red-500">*</span></label>
+              <input type="text" id="customer" placeholder="請輸入經銷商或客戶公司全名" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">End User（終端客戶）<span class="text-red-500">*</span></label>
+              <input type="text" id="endUser" placeholder="請輸入最終使用客戶名稱" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">案名 <span class="text-red-500">*</span></label>
+              <input type="text" id="caseName" placeholder="例如：2026半導體設備升級案" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:outline-none">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">預計下單月份</label>
+              <input type="month" id="orderMonth" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:outline-none bg-white">
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <label class="block text-xs font-semibold text-slate-700 mb-1">專案內容簡述</label>
+            <textarea id="projectContent" rows="2" placeholder="請簡述專案背景、應用機台設備、技術需求等..." class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:outline-none"></textarea>
+          </div>
+        </div>
+
+        <!-- 區塊二：競爭狀況與採購條件 -->
+        <div class="mb-6">
+          <h3 class="text-sm font-semibold text-slate-800 bg-slate-50 px-3 py-2 rounded border-l-4 border-red-600 mb-4">
+            二、競爭狀況
+          </h3>
+          
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">競品廠牌</label>
+              <input type="text" id="competitorBrand" placeholder="例如：台達、西門子、歐姆龍" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">價差說明</label>
+              <input type="text" id="priceDifference" placeholder="例如：高於競品 15%" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:outline-none">
+            </div>
+          </div>
+        </div>
+
+        <!-- 區塊三：台灣三菱偕同拜訪（非必要填寫） -->
+        <div class="mb-6">
+          <h3 class="text-sm font-semibold text-slate-800 bg-slate-50 px-3 py-2 rounded border-l-4 border-red-600 mb-4 flex items-center justify-between">
+            <span>三、台灣三菱偕同拜訪</span>
+            <span class="text-xs font-normal text-slate-400">非必填</span>
+          </h3>
+          
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">拜訪日期</label>
+              <input type="date" id="visitDate" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:outline-none bg-white">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">拜訪目的</label>
+              <input type="text" id="visitPurpose" placeholder="例如：新設備規格技術交流、競品替換切換評估" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">偕同拜訪人員</label>
+              <input type="text" id="visitPersonnel" placeholder="例如：台灣三菱業務 王專員、FAE 李工程師" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:outline-none">
+            </div>
+          </div>
+        </div>
+
+        <!-- 區塊四：申請機種明細清單 -->
+        <div class="mb-6">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-semibold text-slate-800 bg-slate-50 px-3 py-2 rounded border-l-4 border-red-600 flex-1 mr-3">
+              四、專案機種與競品清單
+            </h3>
+            <button type="button" id="btnAddRow" class="no-print inline-flex items-center px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-semibold rounded border border-red-200 transition">
+              <i class="fa-solid fa-plus mr-1"></i>新增機種列
+            </button>
+          </div>
+
+          <div class="overflow-x-auto border border-slate-200 rounded-lg shadow-sm">
+            <table class="w-full text-left text-xs sm:text-sm divide-y divide-slate-200">
+              <thead class="bg-slate-50 text-slate-700 font-semibold">
+                <tr>
+                  <th scope="col" class="px-3 py-2.5 w-12 text-center">序號</th>
+                  <th scope="col" class="px-3 py-2.5 min-w-[200px]">申請機種 / 型號規格</th>
+                  <th scope="col" class="px-3 py-2.5 w-24 text-right">數量</th>
+                  <th scope="col" class="px-3 py-2.5 min-w-[180px] bg-amber-50/70 border-l border-amber-200 text-amber-900">對應競品型號</th>
+                  <th scope="col" class="px-3 py-2.5 w-32 bg-amber-50/70 text-amber-900 text-right">競品價格</th>
+                  <th scope="col" class="px-3 py-2.5 min-w-[150px]">備註</th>
+                  <th scope="col" class="px-3 py-2.5 w-14 text-center no-print">操作</th>
+                </tr>
+              </thead>
+              <tbody id="itemsTableBody" class="divide-y divide-slate-200 bg-white">
+                <!-- 動態生成的機種列 -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 區塊五：備註 -->
+        <div class="mb-8">
+          <h3 class="text-sm font-semibold text-slate-800 bg-slate-50 px-3 py-2 rounded border-l-4 border-red-600 mb-3">
+            五、備註
+          </h3>
+          <textarea id="remarks" rows="3" placeholder="請填寫任何其他約定事項、特定技術需求或特別說明..." class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:outline-none"></textarea>
+        </div>
+
+        <!-- 底部功能按鈕列 -->
+        <div class="flex flex-col-reverse sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-200 no-print">
+          <button type="button" id="btnReset" class="w-full sm:w-auto px-4 py-2 text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition">
+            <i class="fa-solid fa-arrow-rotate-left mr-1"></i>清空重新填寫
+          </button>
+          
+          <div class="flex items-center space-x-3 w-full sm:w-auto justify-end">
+            <!-- 匯出 CSV 按鈕 -->
+            <button type="button" id="btnExportCSVBottom" class="w-full sm:w-auto inline-flex items-center justify-center px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg shadow-sm transition">
+              <i class="fa-solid fa-file-csv text-base mr-2"></i>匯出 CSV 檔
+            </button>
+          </div>
+        </div>
+
+      </form>
+    </div>
+  </main>
+
+  <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-400 no-print mt-auto">
+    <p>三菱專案線上申請單 · 專案內部填報專用</p>
+  </footer>
+
+  <script>
+    let rowCount = 0;
+
+    // 新增機種資料列
+    function addRow(data = {}) {
+      rowCount++;
+      const tbody = document.getElementById('itemsTableBody');
+      const tr = document.createElement('tr');
+      tr.id = `row-${rowCount}`;
+      tr.className = "hover:bg-slate-50 transition border-b border-slate-100";
+
+      tr.innerHTML = `
+        <td class="px-3 py-2 text-center text-slate-500 font-mono row-idx"></td>
+        <td class="px-2 py-2">
+          <input type="text" class="item-model w-full border border-slate-300 rounded px-2.5 py-1.5 text-xs sm:text-sm focus:ring-1 focus:ring-red-500 focus:outline-none" 
+            placeholder="請輸入三菱機種/規格" value="${data.model || ''}">
+        </td>
+        <td class="px-2 py-2">
+          <input type="number" min="1" step="1" class="item-qty w-full border border-slate-300 rounded px-2.5 py-1.5 text-xs sm:text-sm text-right font-mono focus:ring-1 focus:ring-red-500 focus:outline-none" 
+            placeholder="數量" value="${data.qty !== undefined ? data.qty : 1}">
+        </td>
+        <td class="px-2 py-2 border-l border-amber-100 bg-amber-50/30">
+          <input type="text" class="item-competitor-model w-full border border-amber-200 rounded px-2.5 py-1.5 text-xs sm:text-sm focus:ring-1 focus:ring-amber-500 focus:outline-none bg-white" 
+            placeholder="對應競品型號" value="${data.competitorModel || ''}">
+        </td>
+        <td class="px-2 py-2 bg-amber-50/30">
+          <input type="text" class="item-competitor-price w-full border border-amber-200 rounded px-2.5 py-1.5 text-xs sm:text-sm text-right focus:ring-1 focus:ring-amber-500 focus:outline-none bg-white" 
+            placeholder="例如: 25,000" value="${data.competitorPrice || ''}">
+        </td>
+        <td class="px-2 py-2">
+          <input type="text" class="item-note w-full border border-slate-300 rounded px-2.5 py-1.5 text-xs sm:text-sm focus:ring-1 focus:ring-red-500 focus:outline-none" 
+            placeholder="品項備註" value="${data.note || ''}">
+        </td>
+        <td class="px-2 py-2 text-center no-print">
+          <button type="button" onclick="removeRow(${rowCount})" class="text-slate-400 hover:text-red-600 p-1.5 rounded transition" title="刪除此列">
+            <i class="fa-regular fa-trash-can"></i>
+          </button>
+        </td>
+      `;
+
+      tbody.appendChild(tr);
+      updateRowIndices();
+    }
+
+    // 刪除指定機種列
+    function removeRow(id) {
+      const rows = document.querySelectorAll('#itemsTableBody tr');
+      if (rows.length <= 1) {
+        showToast('至少需保留一筆機種列', 'error');
+        return;
+      }
+      const row = document.getElementById(`row-${id}`);
+      if (row) {
+        row.remove();
+        updateRowIndices();
+      }
+    }
+
+    // 更新列號
+    function updateRowIndices() {
+      const rows = document.querySelectorAll('#itemsTableBody tr');
+      rows.forEach((r, idx) => {
+        const idxCell = r.querySelector('.row-idx');
+        if (idxCell) idxCell.textContent = idx + 1;
+      });
+    }
+
+    // 匯出 CSV 檔
+    function exportToCSV() {
+      const customer = document.getElementById('customer').value.trim();
+      const endUser = document.getElementById('endUser').value.trim();
+      const caseName = document.getElementById('caseName').value.trim();
+      const projectContent = document.getElementById('projectContent').value.trim();
+      const orderMonth = document.getElementById('orderMonth').value;
+
+      const competitorBrand = document.getElementById('competitorBrand').value.trim();
+      const priceDifference = document.getElementById('priceDifference').value.trim();
+
+      const visitDate = document.getElementById('visitDate').value;
+      const visitPurpose = document.getElementById('visitPurpose').value.trim();
+      const visitPersonnel = document.getElementById('visitPersonnel').value.trim();
+
+      const remarks = document.getElementById('remarks').value.trim();
+
+      // 檢查機種明細與各別對應競品
+      const rows = document.querySelectorAll('#itemsTableBody tr');
+      const items = [];
+      rows.forEach((tr, idx) => {
+        const model = tr.querySelector('.item-model').value.trim();
+        const qty = tr.querySelector('.item-qty').value.trim();
+        const competitorModel = tr.querySelector('.item-competitor-model').value.trim();
+        const competitorPrice = tr.querySelector('.item-competitor-price').value.trim();
+        const note = tr.querySelector('.item-note').value.trim();
+        if (model || qty || competitorModel || competitorPrice || note) {
+          items.push({ idx: idx + 1, model, qty, competitorModel, competitorPrice, note });
+        }
+      });
+
+      // CSV 逸出處理
+      const escapeCSV = (val) => {
+        if (val === null || val === undefined) return '""';
+        const str = String(val);
+        if (str.includes('"') || str.includes(',') || str.includes('\n') || str.includes('\r')) {
+          return `"${str.replace(/"/g, '""')}"`;
+        }
+        return `"${str}"`;
+      };
+
+      const csvLines = [];
+
+      // 標題行
+      csvLines.push(["【三菱專案申請單】"].map(escapeCSV).join(','));
+      csvLines.push([]);
+
+      // 專案基本資料
+      csvLines.push(["經銷商/客戶", customer, "End User (終端客戶)", endUser].map(escapeCSV).join(','));
+      csvLines.push(["案名", caseName, "預計下單月份", orderMonth].map(escapeCSV).join(','));
+      csvLines.push(["專案內容簡述", projectContent, "", ""].map(escapeCSV).join(','));
+      csvLines.push([]);
+
+      // 競爭狀況
+      csvLines.push(["競品廠牌", competitorBrand, "價差", priceDifference].map(escapeCSV).join(','));
+      csvLines.push([]);
+
+      // 台灣三菱偕同拜訪
+      csvLines.push(["【台灣三菱偕同拜訪】"].map(escapeCSV).join(','));
+      csvLines.push(["拜訪日期", visitDate, "拜訪目的", visitPurpose, "偕同拜訪人員", visitPersonnel].map(escapeCSV).join(','));
+      csvLines.push([]);
+
+      // 備註
+      csvLines.push(["備註", remarks, "", ""].map(escapeCSV).join(','));
+      csvLines.push([]);
+
+      // 機種品項明細（含對應競品）
+      csvLines.push(["【專案機種與對應競品清單】"].map(escapeCSV).join(','));
+      csvLines.push(["序號", "申請機種 / 型號規格", "數量", "對應競品型號", "競品價格", "備註"].map(escapeCSV).join(','));
+
+      if (items.length === 0) {
+        csvLines.push(["1", "", "", "", "", ""].map(escapeCSV).join(','));
+      } else {
+        items.forEach(item => {
+          csvLines.push([item.idx, item.model, item.qty, item.competitorModel, item.competitorPrice, item.note].map(escapeCSV).join(','));
+        });
+      }
+
+      // 加入 UTF-8 BOM，防止 Excel 開啟時中文亂碼
+      const csvString = '\uFEFF' + csvLines.join('\r\n');
+      const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+
+      // 檔名加上案名或客戶名稱
+      const identifier = caseName || customer || '未命名專案';
+      const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+      link.href = downloadUrl;
+      link.download = `三菱專案申請單_${identifier}_${todayStr}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(downloadUrl);
+
+      showToast('已成功匯出 CSV 檔案！', 'success');
+    }
+
+    // 提示通知視窗
+    function showToast(text, type = 'info') {
+      const box = document.getElementById('toastMessage');
+      const icon = document.getElementById('toastIcon');
+      const textElem = document.getElementById('toastText');
+
+      box.className = "mb-4 p-3 rounded-lg flex items-center justify-between text-sm transition-all shadow-sm";
+
+      if (type === 'success') {
+        box.classList.add('bg-emerald-50', 'border', 'border-emerald-200', 'text-emerald-800');
+        icon.className = "fa-solid fa-circle-check text-emerald-600 mr-2";
+      } else if (type === 'error') {
+        box.classList.add('bg-rose-50', 'border', 'border-rose-200', 'text-rose-800');
+        icon.className = "fa-solid fa-circle-exclamation text-rose-600 mr-2";
+      } else {
+        box.classList.add('bg-sky-50', 'border', 'border-sky-200', 'text-sky-800');
+        icon.className = "fa-solid fa-circle-info text-sky-600 mr-2";
+      }
+
+      textElem.textContent = text;
+      box.classList.remove('hidden');
+
+      clearTimeout(window.toastTimer);
+      window.toastTimer = setTimeout(hideToast, 4000);
+    }
+
+    function hideToast() {
+      document.getElementById('toastMessage').classList.add('hidden');
+    }
+
+    // 頁面初始化
+    window.addEventListener('DOMContentLoaded', () => {
+      // 預設新增 3 個空白機種列
+      addRow();
+      addRow();
+      addRow();
+
+      // 新增列按鈕監聽
+      document.getElementById('btnAddRow').addEventListener('click', () => {
+        addRow();
+      });
+
+      // 匯出 CSV 按鈕 (頁首與頁尾)
+      document.getElementById('btnExportCSVHeader').addEventListener('click', exportToCSV);
+      document.getElementById('btnExportCSV').addEventListener('click', exportToCSV);
+      document.getElementById('btnExportCSVBottom').addEventListener('click', exportToCSV);
+
+      // 清空表單
+      document.getElementById('btnReset').addEventListener('click', () => {
+        document.getElementById('projectAppForm').reset();
+        document.getElementById('itemsTableBody').innerHTML = '';
+        addRow();
+        addRow();
+        addRow();
+        showToast('表單已清空重置', 'info');
+      });
+    });
+  </script>
+</body>
+</html>
