@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SEEC 專案與業務系統入口門戶</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Phosphor Icons (現代高質感向量圖示) -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <!-- Google Fonts: Inter & Noto Sans TC -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'Noto Sans TC', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+              900: '#312e81',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .glass-card {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(226, 232, 240, 0.8);
+    }
+    .dark .glass-card {
+      background: rgba(30, 41, 59, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(51, 65, 85, 0.8);
+    }
+    .hover-lift {
+      transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .hover-lift:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 14px 30px -10px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.03);
+    }
+  </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col font-sans transition-colors duration-200">
+
+  <header class="sticky top-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-indigo-500/20">
+          <i class="ph-bold ph-squares-four text-xl"></i>
+        </div>
+        <div>
+          <h1 class="text-base sm:text-lg font-bold tracking-tight text-slate-900 dark:text-white leading-tight">SEEC 業務管理平台</h1>
+          <p class="text-xs text-slate-500 dark:text-slate-400">專案申請與 SV 支援中心</p>
+        </div>
+      </div>
+      
+      <div class="flex items-center space-x-3">
+        <!-- 狀態篩選或快速指示 -->
+        <div class="hidden sm:flex items-center space-x-2 text-xs text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span>系統運行正常</span>
+        </div>
+        
+        <!-- 深色模式切換 -->
+        <button id="themeToggle" aria-label="切換主題" class="p-2.5 rounded-xl text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition">
+          <i id="themeIcon" class="ph-bold ph-moon text-lg"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+    <!-- 主宣傳區塊 -->
+    <div class="mb-10 text-center sm:text-left sm:flex sm:items-end sm:justify-between border-b border-slate-200 dark:border-slate-800 pb-8">
+      <div>
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800/60 mb-3">
+          <i class="ph-fill ph-sparkle"></i> 內部專案服務導航站
+        </div>
+        <h2 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+          專案作業與管理快捷入口
+        </h2>
+        <p class="mt-2 text-sm sm:text-base text-slate-600 dark:text-slate-400 max-w-2xl">
+          整合三菱專案流程與 SV 業務管理模組，提供直覺、高效的查詢與申請作業通道。
+        </p>
+      </div>
+      <!-- 快速計數標籤 -->
+      <div class="mt-4 sm:mt-0 flex gap-4 justify-center sm:justify-end text-sm">
+        <div class="bg-white dark:bg-slate-800 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm text-center">
+          <span class="block text-xl font-bold text-emerald-600 dark:text-emerald-400">1</span>
+          <span class="text-xs text-slate-500">已上線系統</span>
+        </div>
+        <div class="bg-white dark:bg-slate-800 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm text-center">
+          <span class="block text-xl font-bold text-amber-500">3</span>
+          <span class="text-xs text-slate-500">規劃建置中</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 項目卡片清單 -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+      <!-- 1. 三菱專案申請單 (已上線) -->
+      <div class="glass-card hover-lift rounded-2xl p-6 sm:p-7 relative overflow-hidden group border-indigo-200/80 dark:border-indigo-900/50 flex flex-col justify-between">
+        <div class="absolute -right-12 -top-12 w-36 h-36 bg-blue-500/10 rounded-full blur-2xl group-hover:bg-blue-500/20 transition-all pointer-events-none"></div>
+        <div>
+          <div class="flex items-start justify-between mb-5">
+            <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/25">
+              <i class="ph-bold ph-file-text text-2xl"></i>
+            </div>
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-400 dark:border-emerald-800">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+              服務上線中
+            </span>
+          </div>
+
+          <h3 class="text-xl font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+            三菱專案申請單
+          </h3>
+          <p class="mt-2 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+            進入三菱專案填報與審核系統，支援報價規格、專案編號申請及線上審批作業流程。
+          </p>
+        </div>
+
+        <div class="mt-8 pt-4 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
+          <span class="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
+            <i class="ph-bold ph-globe"></i> 外部雲端服務
+          </span>
+          <a href="https://seec-pohan.github.io/SEECPOHAN/code_artifact" 
+             target="_blank" 
+             rel="noopener noreferrer"
+             class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md shadow-indigo-500/20 active:scale-95 transition-all">
+            <span>立即前往</span>
+            <i class="ph-bold ph-arrow-up-right"></i>
+          </a>
+        </div>
+      </div>
+
+      <!-- 2. SV庫存查詢 (製作中) -->
+      <div class="glass-card hover-lift rounded-2xl p-6 sm:p-7 relative overflow-hidden group flex flex-col justify-between">
+        <div>
+          <div class="flex items-start justify-between mb-5">
+            <div class="w-14 h-14 rounded-2xl bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+              <i class="ph-bold ph-package text-2xl"></i>
+            </div>
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/60 dark:text-amber-400 dark:border-amber-800">
+              <i class="ph-bold ph-hammer text-xs"></i>
+              系統建置中
+            </span>
+          </div>
+
+          <h3 class="text-xl font-bold text-slate-900 dark:text-white">
+            SV 庫存查詢
+          </h3>
+          <p class="mt-2 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+            即時查詢全台 SV 系列備品、現貨倉儲分配數量、庫存預警與安全存量狀態。
+          </p>
+        </div>
+
+        <div class="mt-8 pt-4 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
+          <span class="text-xs text-slate-400 dark:text-slate-500 flex items-center gap-1">
+            <i class="ph-bold ph-clock"></i> 預計近期發布
+          </span>
+          <button onclick="showNotice('SV 庫存查詢', '該系統目前正進行 ERP 庫存資料庫串接與即時調撥模組開發，即將正式上線！')" 
+                  class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 active:scale-95 transition-all">
+            <span>查看進度</span>
+            <i class="ph-bold ph-info"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- 3. SV交期查詢 (製作中) -->
+      <div class="glass-card hover-lift rounded-2xl p-6 sm:p-7 relative overflow-hidden group flex flex-col justify-between">
+        <div>
+          <div class="flex items-start justify-between mb-5">
+            <div class="w-14 h-14 rounded-2xl bg-cyan-500/10 dark:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 flex items-center justify-center">
+              <i class="ph-bold ph-truck text-2xl"></i>
+            </div>
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/60 dark:text-amber-400 dark:border-amber-800">
+              <i class="ph-bold ph-hammer text-xs"></i>
+              系統建置中
+            </span>
+          </div>
+
+          <h3 class="text-xl font-bold text-slate-900 dark:text-white">
+            SV 交期查詢
+          </h3>
+          <p class="mt-2 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+            追蹤原廠交期排程、在途船期貨況動態，並提供業務同仁精確的訂單預計到貨日試算。
+          </p>
+        </div>
+
+        <div class="mt-8 pt-4 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
+          <span class="text-xs text-slate-400 dark:text-slate-500 flex items-center gap-1">
+            <i class="ph-bold ph-clock"></i> 預計近期發布
+          </span>
+          <button onclick="showNotice('SV 交期查詢', '本模組正進行海運/空運排程與海外工廠產能日曆整合，敬請期待！')" 
+                  class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 active:scale-95 transition-all">
+            <span>查看進度</span>
+            <i class="ph-bold ph-info"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- 4. SV毛利分析系統 (製作中) -->
+      <div class="glass-card hover-lift rounded-2xl p-6 sm:p-7 relative overflow-hidden group flex flex-col justify-between">
+        <div>
+          <div class="flex items-start justify-between mb-5">
+            <div class="w-14 h-14 rounded-2xl bg-purple-500/10 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+              <i class="ph-bold ph-chart-pie-slice text-2xl"></i>
+            </div>
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/60 dark:text-amber-400 dark:border-amber-800">
+              <i class="ph-bold ph-hammer text-xs"></i>
+              系統建置中
+            </span>
+          </div>
+
+          <h3 class="text-xl font-bold text-slate-900 dark:text-white">
+            SV 毛利分析系統
+          </h3>
+          <p class="mt-2 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+            提供成交底價試算、各產品線毛利率分層解析與專案折扣利潤評估報表。
+          </p>
+        </div>
+
+        <div class="mt-8 pt-4 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
+          <span class="text-xs text-slate-400 dark:text-slate-500 flex items-center gap-1">
+            <i class="ph-bold ph-clock"></i> 規格制定中
+          </span>
+          <button onclick="showNotice('SV 毛利分析系統', '毛利計算公式與權限分級架構正在規劃與校對中，完成後將提供業務專屬權限進入！')" 
+                  class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 active:scale-95 transition-all">
+            <span>查看進度</span>
+            <i class="ph-bold ph-info"></i>
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="mt-10 p-5 rounded-2xl bg-indigo-50/60 dark:bg-slate-800/60 border border-indigo-100 dark:border-slate-700/60 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-indigo-600/10 dark:bg-indigo-400/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+          <i class="ph-bold ph-bell-ringing text-xl"></i>
+        </div>
+        <div>
+          <h4 class="text-sm font-bold text-slate-800 dark:text-slate-200">系統建置提醒</h4>
+          <p class="text-xs text-slate-500 dark:text-slate-400">目前「三菱專案申請單」已完成部署並可正常操作，其餘模組正加緊開發中。</p>
+        </div>
+      </div>
+      <div class="text-xs text-slate-400 dark:text-slate-500 whitespace-nowrap">
+        最後更新：2026/10
+      </div>
+    </div>
+  </main>
+
+  <footer class="mt-auto py-6 border-t border-slate-200 dark:border-slate-800 text-center text-xs text-slate-500 dark:text-slate-400">
+    <div class="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+      <p>© 2026 SEEC 內部專案管理門戶. 保留所有權利。</p>
+      <div class="flex items-center space-x-4">
+        <span>內部專用入口</span>
+        <span>•</span>
+        <span>版本 v1.0.4</span>
+      </div>
+    </div>
+  </footer>
+
+  <div id="noticeModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-200 px-4">
+    <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl p-6 shadow-2xl border border-slate-200 dark:border-slate-700 transform scale-95 transition-transform duration-200" id="modalCard">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+            <i class="ph-bold ph-wrench text-xl"></i>
+          </div>
+          <div>
+            <h3 id="modalTitle" class="text-base font-bold text-slate-900 dark:text-white">系統通知</h3>
+            <span class="text-xs text-slate-400">建置狀態更新</span>
+          </div>
+        </div>
+        <button onclick="closeNotice()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition">
+          <i class="ph-bold ph-x text-lg"></i>
+        </button>
+      </div>
+      
+      <p id="modalMessage" class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-6">
+        訊息內容載入中...
+      </p>
+
+      <div class="flex justify-end">
+        <button onclick="closeNotice()" class="w-full sm:w-auto px-5 py-2.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition shadow-md shadow-indigo-500/20 active:scale-95">
+          我知道了
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 彈出視窗控制
+    const modal = document.getElementById('noticeModal');
+    const modalCard = document.getElementById('modalCard');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalMessage = document.getElementById('modalMessage');
+
+    function showNotice(title, message) {
+      modalTitle.textContent = title;
+      modalMessage.textContent = message;
+      modal.classList.remove('opacity-0', 'pointer-events-none');
+      modalCard.classList.remove('scale-95');
+      modalCard.classList.add('scale-100');
+    }
+
+    function closeNotice() {
+      modal.classList.add('opacity-0', 'pointer-events-none');
+      modalCard.classList.remove('scale-100');
+      modalCard.classList.add('scale-95');
+    }
+
+    // 點擊背景遮罩也可關閉
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        closeNotice();
+      }
+    });
+
+    // ESC 鍵關閉
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeNotice();
+    });
+
+    // 主題切換 (支援本機存取與預設系統偏好)
+    const themeToggleBtn = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeIcon');
+
+    function initTheme() {
+      const savedTheme = localStorage.getItem('theme');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+        document.documentElement.classList.add('dark');
+        themeIcon.classList.replace('ph-moon', 'ph-sun');
+      } else {
+        document.documentElement.classList.remove('dark');
+        themeIcon.classList.replace('ph-sun', 'ph-moon');
+      }
+    }
+
+    themeToggleBtn.addEventListener('click', () => {
+      const isDark = document.documentElement.classList.toggle('dark');
+      if (isDark) {
+        localStorage.setItem('theme', 'dark');
+        themeIcon.classList.replace('ph-moon', 'ph-sun');
+      } else {
+        localStorage.setItem('theme', 'light');
+        themeIcon.classList.replace('ph-sun', 'ph-moon');
+      }
+    });
+
+    initTheme();
+  </script>
+</body>
+</html>
