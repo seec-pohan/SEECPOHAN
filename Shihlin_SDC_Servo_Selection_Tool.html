@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>士林電機 SDC 系列伺服規格選用系統 (單機離線網頁版)</title>
+  <style>
+    /* Reset & Base Fonts */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", sans-serif;
+      background-color: #020617;
+      color: #f8fafc;
+      line-height: 1.5;
+      font-size: 13px;
+    }
+    a, button { cursor: pointer; font-family: inherit; }
+    input, select {
+      background-color: #0b1329;
+      border: 1px solid #334155;
+      color: #f8fafc;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      width: 100%;
+      outline: none;
+    }
+    input:focus, select:focus { border-color: #10b981; }
+    
+    /* Layout */
+    .header {
+      background: rgba(15, 23, 42, 0.95);
+      border-bottom: 1px solid #1e293b;
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 16px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+    .brand-badge {
+      background: #10b981;
+      color: #020617;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-weight: 800;
+      font-family: monospace;
+      font-size: 12px;
+    }
+    .nav-tabs {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+    }
+    .nav-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: #94a3b8;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .nav-btn:hover { color: #ffffff; background: #1e293b; }
+    .nav-btn.active {
+      background: #10b981;
+      color: #020617;
+      font-weight: 700;
+    }
+    .hero {
+      background: linear-gradient(90deg, #0f172a 0%, #064e3b 100%);
+      padding: 18px 24px;
+      border-bottom: 1px solid #1e293b;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .hero-title h1 { font-size: 18px; color: #ffffff; margin-bottom: 4px; }
+    .hero-title p { font-size: 12px; color: #94a3b8; }
+    .hero-kpis { display: flex; gap: 12px; }
+    .kpi-box {
+      background: rgba(2, 6, 23, 0.8);
+      border: 1px solid #1e293b;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-family: monospace;
+    }
+    .kpi-label { font-size: 11px; color: #94a3b8; display: block; }
+    .kpi-val { font-size: 13px; font-weight: 700; color: #10b981; }
+
+    .container {
+      max-width: 1400px;
+      margin: 20px auto;
+      padding: 0 20px 40px;
+    }
+    .card {
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    .card-header {
+      border-bottom: 1px solid #1e293b;
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .card-title { font-size: 15px; font-weight: 700; color: #ffffff; }
+    .card-kicker { font-size: 11px; color: #10b981; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; display: block; }
+
+    /* Tables */
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th { background: #020617; color: #94a3b8; font-weight: 600; text-align: left; padding: 10px 12px; border-bottom: 1px solid #1e293b; }
+    td { padding: 10px 12px; border-bottom: 1px solid #1e293b; color: #cbd5e1; }
+    tr:hover td { background: rgba(30, 41, 59, 0.4); }
+    .mono { font-family: monospace; }
+    .text-emerald { color: #10b981; font-weight: 700; }
+    .text-sky { color: #38bdf8; font-weight: 600; }
+    .text-rose { color: #f43f5e; font-weight: 700; }
+    .btn-sm {
+      background: #1e293b;
+      color: #ffffff;
+      border: none;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      transition: background 0.15s;
+    }
+    .btn-sm:hover { background: #334155; }
+    .btn-primary {
+      background: #10b981;
+      color: #020617;
+      border: none;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .btn-primary:hover { background: #34d399; }
+    
+    /* Grid */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    @media (max-width: 900px) {
+      .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+    }
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; font-size: 11px; color: #94a3b8; margin-bottom: 4px; }
+
+    /* Modal */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(2, 6, 23, 0.85);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-backdrop.active { display: flex; }
+    .modal-box {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      max-width: 650px;
+      width: 100%;
+      padding: 24px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation Header -->
+  <header class="header">
+    <div class="brand">
+      <span class="brand-badge">SDC</span>
+      <span>士林電機 SDC 伺服選型系統</span>
+      <span style="font-size: 11px; color: #10b981; font-weight: normal; margin-left: 8px;">[單機離線版]</span>
+    </div>
+
+    <div class="nav-tabs">
+      <button class="nav-btn active" onclick="switchTab('packages')">成套選用表 (Turnkey)</button>
+      <button class="nav-btn" onclick="switchTab('sizing')">機構計算與轉矩</button>
+      <button class="nav-btn" onclick="switchTab('compare')">全系列規格表</button>
+      <button class="nav-btn" onclick="switchTab('wiring')">控制接線示意</button>
+      <button class="nav-btn" onclick="switchTab('model')">型號產生器</button>
+      <button class="nav-btn" onclick="switchTab('accessories')">原廠配件 (BOM)</button>
+    </div>
+
+    <div>
+      <button class="btn-primary" onclick="window.print()">列印規格書</button>
+    </div>
+  </header>
+
+  <!-- Hero Status -->
+  <div class="hero">
+    <div class="hero-title">
+      <h1>智慧機械的最佳動力 · 經濟型超進化 AC 伺服規格選用</h1>
+      <p>依據士林電機最新型錄 (Ver. 251029) 製作 · 支援 220V/440V 全容量完整參數計算</p>
+    </div>
+    <div class="hero-kpis">
+      <div class="kpi-box">
+        <span class="kpi-label">速度響應頻寬</span>
+        <span class="kpi-val">2.0 kHz (1ms 整定)</span>
+      </div>
+      <div class="kpi-box">
+        <span class="kpi-label">匯流排週期</span>
+        <span class="kpi-val">100 μs (EtherCAT)</span>
+      </div>
+      <div class="kpi-box">
+        <span class="kpi-label">編碼器精度</span>
+        <span class="kpi-val">24bit (1677萬脈衝)</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+
+    <!-- TAB 1: 成套選用表 (Turnkey Package Sets) -->
+    <div id="tab-packages" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <span class="card-kicker">Turnkey Solution</span>
+            <div class="card-title">原廠標準成套選用一覽表</div>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <select id="pkg-filter-volt" onchange="renderPackages()" style="width: 110px;">
+              <option value="all">全電壓等級</option>
+              <option value="220V">220V</option>
+              <option value="440V">440V</option>
+            </select>
+            <select id="pkg-filter-comm" onchange="renderPackages()" style="width: 140px;">
+              <option value="all">全通訊架構</option>
+              <option value="EtherCAT">EtherCAT</option>
+              <option value="Modbus (Pulse)">脈衝/類比</option>
+              <option value="CC-Link IE Field Basic">CC-Link IEFB</option>
+            </select>
+            <input type="text" id="pkg-search" placeholder="搜尋套組、功率..." oninput="renderPackages()" style="width: 180px;">
+          </div>
+        </div>
+
+        <div style="overflow-x: auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>套組名稱與編碼</th>
+                <th>容量 / 電壓</th>
+                <th>通訊模式</th>
+                <th>驅動器型號</th>
+                <th>伺服馬達型號</th>
+                <th>電源電纜線</th>
+                <th>編碼器電纜線</th>
+                <th>煞車型式</th>
+                <th style="text-align: right;">成套明細</th>
+              </tr>
+            </thead>
+            <tbody id="package-tbody">
+              <!-- Dynamically populated via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: 機構計算與轉矩選型 (Sizing Engine) -->
+    <div id="tab-sizing" class="tab-content" style="display: none;">
+      <div class="grid-2">
+        <!-- Mechanical Inputs -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <span class="card-kicker">STEP 1 · 機構運動參數</span>
+              <div class="card-title">傳動機構負載設定</div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>傳動機構類型</label>
+            <select id="size-mech" onchange="calcSizing()">
+              <option value="ballScrew">滾珠螺桿機構 (CNC / 線性模組)</option>
+              <option value="beltPulley">同步皮帶輪機構 (搬運 / 輸送帶)</option>
+              <option value="rackPinion">齒輪齒條機構 (長行程重載)</option>
+              <option value="rotaryTable">旋轉分度盤機構 (凸輪 / 圓盤)</option>
+            </select>
+          </div>
+
+          <div class="grid-3">
+            <div class="form-group">
+              <label>負載工件質量 M (kg)</label>
+              <input type="number" id="size-mass" value="30" onchange="calcSizing()">
+            </div>
+            <div class="form-group">
+              <label>最高速度 V (m/min)</label>
+              <input type="number" id="size-speed" value="18" onchange="calcSizing()">
+            </div>
+            <div class="form-group">
+              <label>加速時間 ta (s)</label>
+              <input type="number" id="size-accel" value="0.15" step="0.05" onchange="calcSizing()">
+            </div>
+          </div>
+
+          <div class="grid-3">
+            <div class="form-group">
+              <label>減速比 1:N (馬達:負載)</label>
+              <input type="number" id="size-ratio" value="1" onchange="calcSizing()">
+            </div>
+            <div class="form-group">
+              <label>摩擦係數 μ</label>
+              <input type="number" id="size-fric" value="0.02" step="0.01" onchange="calcSizing()">
+            </div>
+            <div class="form-group">
+              <label>運動方向姿態</label>
+              <select id="size-angle" onchange="calcSizing()">
+                <option value="horizontal">水平移動 (0度)</option>
+                <option value="vertical">垂直升降 (90度 · 強制煞車)</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="border-top: 1px solid #1e293b; padding-top: 12px; margin-top: 10px;">
+            <div style="font-size: 11px; color: #38bdf8; font-weight: 600; margin-bottom: 8px;">螺桿特徵參數 (若為螺桿機構)</div>
+            <div class="grid-3">
+              <div class="form-group">
+                <label>螺桿外徑 d (mm)</label>
+                <input type="number" id="size-screw-d" value="20" onchange="calcSizing()">
+              </div>
+              <div class="form-group">
+                <label>螺桿長度 L (mm)</label>
+                <input type="number" id="size-screw-l" value="600" onchange="calcSizing()">
+              </div>
+              <div class="form-group">
+                <label>螺桿導程 Lead (mm)</label>
+                <input type="number" id="size-screw-p" value="10" onchange="calcSizing()">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Calculation Results -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <span class="card-kicker">STEP 2 · 轉矩與慣量分析</span>
+              <div class="card-title">換算需求與建議規格</div>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="kpi-box">
+              <span class="kpi-label">換算負載慣量 JL</span>
+              <span id="res-jl" class="kpi-val text-sky">0.00 ×10⁻⁴ kg·m²</span>
+            </div>
+            <div class="kpi-box">
+              <span class="kpi-label">所需馬達轉速 N</span>
+              <span id="res-rpm" class="kpi-val">1800 rpm</span>
+            </div>
+            <div class="kpi-box">
+              <span class="kpi-label">連續運轉轉矩 Trms</span>
+              <span id="res-trms" class="kpi-val text-emerald">0.00 N·m</span>
+            </div>
+            <div class="kpi-box">
+              <span class="kpi-label">最大加速轉矩 Tpeak</span>
+              <span id="res-tpeak" class="kpi-val text-rose">0.00 N·m</span>
+            </div>
+          </div>
+
+          <div style="background: rgba(6, 78, 59, 0.3); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 8px; padding: 14px; margin-top: 14px;">
+            <div style="font-size: 11px; color: #10b981; font-weight: 700; text-transform: uppercase;">建議馬達等級 (安全係數 1.3)</div>
+            <div id="res-sugg-power" style="font-size: 22px; font-weight: 800; font-family: monospace; color: #ffffff; margin: 4px 0;">≥ 400 W</div>
+            <div id="res-notes" style="font-size: 11px; color: #cbd5e1; line-height: 1.6;">建議搭配 SME-L04030 或 SME-H04030 高慣量機種。</div>
+          </div>
+
+          <!-- Dynamic SVG Torque Curve -->
+          <div style="margin-top: 16px; border-top: 1px solid #1e293b; padding-top: 14px;">
+            <div style="font-size: 12px; font-weight: 700; margin-bottom: 8px;">T-N 轉矩特性曲線 (連續與瞬間運轉區間)</div>
+            <svg id="tn-svg" viewBox="0 0 500 220" style="width: 100%; height: auto; background: #020617; border-radius: 8px; border: 1px solid #1e293b;">
+              <!-- Drawn dynamically -->
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: 全系列規格表 (Compare) -->
+    <div id="tab-compare" class="tab-content" style="display: none;">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <span class="card-kicker">Specifications Database</span>
+            <div class="card-title">SDC 驅動器詳細電氣規格表</div>
+          </div>
+        </div>
+        <div style="overflow-x: auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>驅動器型號</th>
+                <th>通訊介面</th>
+                <th>額定功率</th>
+                <th>輸入電源電壓</th>
+                <th>輸出電流</th>
+                <th>外型尺寸 (W×H×D)</th>
+                <th>STO安全</th>
+                <th>單軸內藏</th>
+              </tr>
+            </thead>
+            <tbody id="driver-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <span class="card-kicker">Motor Database</span>
+            <div class="card-title">SME / SMP 伺服馬達電氣與機構參數</div>
+          </div>
+        </div>
+        <div style="overflow-x: auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>馬達型號</th>
+                <th>慣量等級</th>
+                <th>額定容量</th>
+                <th>額定/最高轉速</th>
+                <th>額定轉矩</th>
+                <th>最大轉矩</th>
+                <th>轉子慣量 J (×10⁻⁴)</th>
+                <th>法蘭框號</th>
+                <th>長度(無煞/附煞)</th>
+              </tr>
+            </thead>
+            <tbody id="motor-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: 控制接線示意 (Wiring) -->
+    <div id="tab-wiring" class="tab-content" style="display: none;">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <span class="card-kicker">Wiring Schematics</span>
+            <div class="card-title">SDC 系列主回路與控制模式接線圖解</div>
+          </div>
+          <div style="display: flex; gap: 6px;">
+            <button class="btn-sm" onclick="setWiringMode('Pt')">Pt 脈衝位置</button>
+            <button class="btn-sm" onclick="setWiringMode('Pr')">Pr 單軸內藏</button>
+            <button class="btn-sm" onclick="setWiringMode('EtherCAT')">EtherCAT 匯流排</button>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px;">
+          <div style="background: #020617; border: 1px solid #1e293b; border-radius: 8px; padding: 16px;">
+            <svg id="wiring-svg" viewBox="0 0 600 360" style="width: 100%; height: auto;">
+              <!-- Drawn by JS -->
+            </svg>
+          </div>
+          <div style="font-size: 12px; line-height: 1.7; color: #cbd5e1;">
+            <h4 style="color: #10b981; margin-bottom: 8px; font-size: 13px;">配線核心注意事項 (型錄規範)：</h4>
+            <p>1. <strong>主電源 (L1, L2, L3)</strong>：220V 1kW(含)以下支援單相輸入；1.5kW 以上或 440V 必須三相供電。</p>
+            <p>2. <strong>煞車不可共用 VDD</strong>：附電磁煞車馬達請外接獨立 DC 24V 煞車電源，切勿引接驅動器內部 VDD 接點。</p>
+            <p>3. <strong>回生電阻接點</strong>：內建回生電阻時 P、C 開路，P、D 短路；外接電阻時接於 P、C 兩端，P、D 開路。</p>
+            <p>4. <strong>STO 硬體安全回路</strong>：SDC-E / SDC-F 標配 CN6 STO 雙迴路急停端子。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 5: 型號產生器 (Model Generator) -->
+    <div id="tab-model" class="tab-content" style="display: none;">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <span class="card-kicker">Part Number Nomenclature</span>
+            <div class="card-title">標準型號編碼產生器</div>
+          </div>
+        </div>
+
+        <div style="background: #020617; border: 1px solid #10b981; border-radius: 8px; padding: 18px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <div style="font-size: 11px; color: #94a3b8;">產生之標準訂購型號：</div>
+            <div id="generated-code" style="font-size: 24px; font-weight: 800; font-family: monospace; color: #10b981; letter-spacing: 1px;">
+              SDC-040E2
+            </div>
+          </div>
+          <button class="btn-primary" onclick="copyModelCode()">複製型號</button>
+        </div>
+
+        <div class="grid-4">
+          <div class="form-group">
+            <label>③ 驅動器容量 (Watts)</label>
+            <select id="m-power" onchange="updateModelCode()">
+              <option value="010">010 (100W)</option>
+              <option value="020">020 (200W)</option>
+              <option value="040" selected>040 (400W)</option>
+              <option value="075">075 (750W)</option>
+              <option value="100">100 (1.0kW)</option>
+              <option value="150">150 (1.5kW)</option>
+              <option value="200">200 (2.0kW)</option>
+              <option value="300">300 (3.0kW)</option>
+              <option value="500">500 (4.4kW/5.5kW)</option>
+              <option value="700">700 (7.5kW)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>④ 控制/通訊類型</label>
+            <select id="m-comm" onchange="updateModelCode()">
+              <option value="A">A: 脈衝 / Modbus</option>
+              <option value="E" selected>E: EtherCAT 網路型 (2024精品獎)</option>
+              <option value="F">F: CC-Link IE Field Basic</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>⑤ 電源電壓等級</label>
+            <select id="m-volt" onchange="updateModelCode()">
+              <option value="2" selected>2: AC 200~240V</option>
+              <option value="4">4: AC 380~480V</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>⑧ 設計機能</label>
+            <select id="m-design" onchange="updateModelCode()">
+              <option value="" selected>標準泛用型</option>
+              <option value="-M">M: 類比進階型</option>
+              <option value="-T">T: STO 安全機能 (僅E/F)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 6: 原廠配件清單 (Accessories BOM) -->
+    <div id="tab-accessories" class="tab-content" style="display: none;">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <span class="card-kicker">Bill of Materials</span>
+            <div class="card-title">原廠專用配線與周邊選配清單</div>
+          </div>
+        </div>
+        <div style="overflow-x: auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>配件類別</th>
+                <th>原廠訂購料號</th>
+                <th>適用電壓</th>
+                <th>規格詳細說明</th>
+                <th>相容機型範圍</th>
+              </tr>
+            </thead>
+            <tbody id="acc-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Package Detail Modal -->
+  <div id="modal-pkg" class="modal-backdrop" onclick="closeModal(event)">
+    <div class="modal-box" onclick="event.stopPropagation()">
+      <div style="display: flex; justify-content: space-between; align-items: start; border-bottom: 1px solid #1e293b; padding-bottom: 12px; margin-bottom: 14px;">
+        <div>
+          <span style="font-size: 11px; color: #10b981; font-weight: 700; text-transform: uppercase;">成套完整選用規格書</span>
+          <h2 id="modal-title" style="font-size: 16px; color: #ffffff; margin-top: 2px;"></h2>
+          <div id="modal-id" style="font-size: 11px; color: #94a3b8; font-family: monospace;"></div>
+        </div>
+        <button onclick="closeModalDirect()" style="background: none; border: none; color: #94a3b8; font-size: 18px;">✕</button>
+      </div>
+
+      <div id="modal-body" style="font-size: 12px; line-height: 1.7; color: #cbd5e1;"></div>
+
+      <div style="margin-top: 16px; display: flex; justify-content: flex-end; gap: 8px;">
+        <button class="btn-primary" onclick="copyModalContent()">複製成套料號</button>
+        <button class="btn-sm" onclick="closeModalDirect()">關閉</button>
+      </div>
+    </div>
+  </div>
+
+  <footer style="text-align: center; padding: 20px; font-size: 11px; color: #64748b; border-top: 1px solid #1e293b;">
+    士林電機廠股份有限公司 · 自動化事業處 · 交流伺服系統 SDC 系列 (Shihlin Electric)
+  </footer>
+
+  <script>
+    // Embedded Data
+    const DRIVERS = [{"modelCode":"SDC-010A2","seriesType":"SDC-A","powerCode":"010","powerWatts":100,"voltageType":"220V","commType":"Modbus (Pulse)","ratedInputVoltage":"單相 200~240 VAC","outputCurrent":1,"controlType":"IGBT-PWM (SVPWM)","dynamicBrake":"內建(軟體)","cooling":"自然冷卻 (IP20)","weightKg":1.4,"dimensions":{"w":51,"w1":38,"h":162,"h1":150,"d":164,"d1":14,"s":5.5},"hasSTO":false,"internalPositionPr":true,"maxPulseFreq":"差動 500k/4Mpps, 集極 200kpps","supportedModes":["Pt (脈波位置)","Pr (單軸內藏64段)","S (速度控制)","T (扭力控制)"]},{"modelCode":"SDC-020A2","seriesType":"SDC-A","powerCode":"020","powerWatts":200,"voltageType":"220V","commType":"Modbus (Pulse)","ratedInputVoltage":"單相 200~240 VAC","outputCurrent":1.8,"controlType":"IGBT-PWM (SVPWM)","dynamicBrake":"內建(軟體)","cooling":"自然冷卻 (IP20)","weightKg":1.4,"dimensions":{"w":51,"w1":38,"h":162,"h1":150,"d":164,"d1":14,"s":5.5},"hasSTO":false,"internalPositionPr":true,"maxPulseFreq":"差動 500k/4Mpps, 集極 200kpps","supportedModes":["Pt (脈波位置)","Pr (單軸內藏64段)","S (速度控制)","T (扭力控制)"]},{"modelCode":"SDC-040A2","seriesType":"SDC-A","powerCode":"040","powerWatts":400,"voltageType":"220V","commType":"Modbus (Pulse)","ratedInputVoltage":"單相 200~240 VAC","outputCurrent":3.2,"controlType":"IGBT-PWM (SVPWM)","dynamicBrake":"內建(軟體)","cooling":"自然冷卻 (IP20)","weightKg":1.4,"dimensions":{"w":51,"w1":38,"h":162,"h1":150,"d":164,"d1":14,"s":5.5},"hasSTO":false,"internalPositionPr":true,"maxPulseFreq":"差動 500k/4Mpps, 集極 200kpps","supportedModes":["Pt (脈波位置)","Pr (單軸內藏64段)","S (速度控制)","T (扭力控制)"]},{"modelCode":"SDC-075A2","seriesType":"SDC-A","powerCode":"075","powerWatts":750,"voltageType":"220V","commType":"Modbus (Pulse)","ratedInputVoltage":"單相 200~240 VAC","outputCurrent":5.8,"controlType":"IGBT-PWM (SVPWM)","dynamicBrake":"內建(軟體)","cooling":"風扇冷卻 (IP20)","weightKg":1.7,"dimensions":{"w":51,"w1":38,"h":162,"h1":150,"d":164,"d1":14,"s":5.5},"hasSTO":false,"internalPositionPr":true,"maxPulseFreq":"差動 500k/4Mpps, 集極 200kpps","supportedModes":["Pt (脈波位置)","Pr (單軸內藏64段)","S (速度控制)","T (扭力控制)"]},{"modelCode":"SDC-100A2","seriesType":"SDC-A","powerCode":"100","powerWatts":1000,"voltageType":"220V","commType":"Modbus (Pulse)","ratedInputVoltage":"單相 200~240 VAC","outputCurrent":5.8,"controlType":"IGBT-PWM (SVPWM)","dynamicBrake":"內建(軟體)","cooling":"風扇冷卻 (IP20)","weightKg":1.7,"dimensions":{"w":51,"w1":38,"h":162,"h1":150,"d":164,"d1":14,"s":5.5},"hasSTO":false,"internalPositionPr":true,"maxPulseFreq":"差動 500k/4Mpps, 集極 200kpps","supportedModes":["Pt (脈波位置)","Pr (單軸內藏64段)","S (速度控制)","T (扭力控制)"]},{"modelCode":"SDC-150A2","seriesType":"SDC-A","powerCode":"150","powerWatts":1500,"voltageType":"220V","commType":"Modbus (Pulse)","ratedInputVoltage":"單相/三相 200~240 VAC","outputCurrent":8.5,"controlType":"IGBT-PWM (SVPWM)","dynamicBrake":"內建(硬體選配)","cooling":"風扇冷卻 (IP20)","weightKg":1.5,"dimensions":{"w":60,"w1":48,"h":175,"h1":162,"d":184,"d1":16.25,"s":5.5},"hasSTO":false,"internalPositionPr":true,"maxPulseFreq":"差動 500k/4Mpps, 集極 200kpps","supportedModes":["Pt (脈波位置)","Pr (單軸內藏64段)","S (速度控制)","T (扭力控制)"]},{"modelCode":"SDC-200A2","seriesType":"SDC-A","powerCode":"200","powerWatts":2000,"voltageType":"220V","commType":"Modbus (Pulse)","ratedInputVoltage":"三相 200~240 VAC","outputCurrent":12.1,"controlType":"IGBT-PWM (SVPWM)","dynamicBrake":"內建(硬體選配)","cooling":"風扇冷卻 (IP20)","weightKg":2.1,"dimensions":{"w":85,"w1":73,"h":182,"h1":170,"d":193,"d1":22.5,"s":6},"hasSTO":false,"internalPositionPr":true,"maxPulseFreq":"差動 500k/4Mpps, 集極 200kpps","supportedModes":["Pt (脈波位置)","Pr (單軸內藏64段)","S (速度控制)","T (扭力控制)"]},{"modelCode":"SDC-300A2","seriesType":"SDC-A","powerCode":"300","powerWatts":3000,"voltageType":"220V","commType":"Modbus (Pulse)","ratedInputVoltage":"三相 200~240 VAC","outputCurrent":17.6,"controlType":"IGBT-PWM (SVPWM)","dynamicBrake":"內建(硬體選配)","cooling":"風扇冷卻 (IP20)","weightKg":2.1,"dimensions":{"w":85,"w1":73,"h":182,"h1":170,"d":193,"d1":22.5,"s":6},"hasSTO":false,"internalPositionPr":true,"maxPulseFreq":"差動 500k/4Mpps, 集極 200kpps","supportedModes":["Pt (脈波位置)","Pr (單軸內藏64段)","S (速度控制)","T (扭力控制)"]},{"modelCode":"SDC-200A4","seriesType":"SDC-A","powerCode":"200","powerWatts":1800,"voltageType":"440V","commType":"Modbus (Pulse)","ratedInputVoltage":"三相 380~480 VAC","outputCurrent":8.4,"controlType":"IGBT-PWM (SVPWM)","dynamicBrake":"全系列內建","cooling":"風扇冷卻 (IP20)","weightKg":2.1,"dimensions":{"w":85,"w1":73,"h":182,"h1":170,"d":193,"d1":22.5,"s":6},"hasSTO":false,"internalPositionPr":true,"maxPulseFreq":"差動 500k/4Mpps, 集極 200kpps","supportedModes":["Pt (脈波位置)","Pr (單軸內藏64段)","S (速度控制)","T (扭力控制)"]},{"modelCode":"SDC-300A4","seriesType":"SDC-A","powerCode":"300","powerWatts":2900,"voltageType":"440V","commType":"Modbus (Pulse)","ratedInputVoltage":"三相 380~480 VAC","outputCurrent":11.9,"controlType":"IGBT-PWM (SVPWM)","dynamicBrake":"全系列內建","cooling":"風扇冷卻 (IP20)","weightKg":2.1,"dimensions":{"w":85,"w1":73,"h":182,"h1":170,"d":193,"d1":22.5,"s":6},"hasSTO":false,"internalPositionPr":true,"maxPulseFreq":"差動 500k/4Mpps, 集極 200kpps","supportedModes":["Pt (脈波位置)","Pr (單軸內藏64段)","S (速度控制)","T (扭力控制)"]},{"modelCode":"SDC-500A4","seriesType":"SDC-A","powerCode":"500","powerWatts":4400,"voltageType":"440V","commType":"Modbus (Pulse)","ratedInputVoltage":"三相 380~480 VAC","outputCurrent":16.5,"controlType":"IGBT-PWM (SVPWM)","dynamicBrake":"全系列內建","cooling":"風扇冷卻 (IP20)","weightKg":5.6,"dimensions":{"w":112,"w1":97,"h":261,"h1":246,"d":230.5,"s":6.5},"hasSTO":false,"internalPositionPr":true,"maxPulseFreq":"差動 500k/4Mpps, 集極 200kpps","supportedModes":["Pt (脈波位置)","Pr (單軸內藏64段)","S (速度控制)","T (扭力控制)"]},{"modelCode":"SDC-700A4","seriesType":"SDC-A","powerCode":"700","powerWatts":7500,"voltageType":"440V","commType":"Modbus (Pulse)","ratedInputVoltage":"三相 380~480 VAC","outputCurrent":27.2,"controlType":"IGBT-PWM (SVPWM)","dynamicBrake":"全系列內建","cooling":"風扇冷卻 (IP20)","weightKg":5.6,"dimensions":{"w":112,"w1":97,"h":261,"h1":246,"d":230.5,"s":6.5},"hasSTO":false,"internalPositionPr":true,"maxPulseFreq":"差動 500k/4Mpps, 集極 200kpps","supportedModes":["Pt (脈波位置)","Pr (單軸內藏64段)","S (速度控制)","T (扭力控制)"]},{"modelCode":"SDC-010E2","seriesType":"SDC-E","powerCode":"010","powerWatts":100,"voltageType":"220V","commType":"EtherCAT","ratedInputVoltage":"單相或三相 200~240 VAC","outputCurrent":1,"controlType":"IGBT-PWM (SVPWM)","dynamicBrake":"全系列內建","cooling":"自然冷卻 (IP20)","weightKg":1.4,"dimensions":{"w":51,"w1":38,"h":184,"h1":161,"d":174,"d1":12.6,"s":5.5},"hasSTO":true,"internalPositionPr":true,"supportedModes":["CSP (循環同步位置)","CSV (循環同步速度)","CST (循環同步扭力)","Pr (單軸內藏)"]},{"modelCode":"SDC-020E2","seriesType":"SDC-E","powerCode":"020","powerWatts":200,"voltageType":"220V","commType":"EtherCAT","ratedInputVoltage":"單相或三相 200~240 VAC","outputCurrent":1.8,"controlType":"IGBT-PWM (SVPWM)","dynamicBrake":"全系列內建","cooling":"自然冷卻 (IP20)","weightKg":1.4,"dimensions":{"w":51,"w1":38,"h":184,"h1":161,"d":174,"d1":12.6,"s":5.5},"hasSTO":true,"internalPositionPr":true,"supportedModes":["CSP (循環同步位置)","CSV (循環同步速度)","CST (循環同步扭力)","Pr (單軸內藏)"]},{"modelCode":"SDC-040E2","seriesType":"SDC-E","powerCode":"040","powerWatts":400,"voltageType":"220V","commType":"EtherCAT","ratedInputVoltage":"單相或三相 200~240 VAC","outputCurrent":3.2,"controlType":"IGBT-PWM (SVPWM)","dynamicBrake":"全系列內建","cooling":"自然冷卻 (IP20)","weightKg":1.4,"dimensions":{"w":51,"w1":38,"h":184,"h1":161,"d":174,"d1":12.6,"s":5.5},"hasSTO":true,"internalPositionPr":true,"supportedModes":["CSP (循環同步位置)","CSV (循環同步速度)","CST (循環同步扭力)","Pr (單軸內藏)"]},{"modelCode":"SDC-075E2","seriesType":"SDC-E","powerCode":"075","powerWatts":750,"voltageType":"220V","commType":"EtherCAT","ratedInputVoltage":"單相或三相 200~240 VAC","outputCurrent":5.8,"controlType":"IGBT-PWM (SVPWM)","dynamicBrake":"全系列內建","cooling":"風扇冷卻 (IP20)","weightKg":1.7,"dimensions":{"w":51,"w1":38,"h":184,"h1":161,"d":174,"d1":12.6,"s":5.5},"hasSTO":true,"internalPositionPr":true,"supportedModes":["CSP (循環同步位置)","CSV (循環同步速度)","CST (循環同步扭力)","Pr (單軸內藏)"]},{"modelCode":"SDC-100E2","seriesType":"SDC-E","powerCode":"100","powerWatts":1000,"voltageType":"220V","commType":"EtherCAT","ratedInputVoltage":"單相或三相 200~240 VAC","outputCurrent":5.8,"controlType":"IGBT-PWM (SVPWM)","dynamicBrake":"全系列內建","cooling":"風扇冷卻 (IP20)","weightKg":1.7,"dimensions":{"w":51,"w1":38,"h":184,"h1":161,"d":174,"d1":12.6,"s":5.5},"hasSTO":true,"internalPositionPr":true,"supportedModes":["CSP (循環同步位置)","CSV (循環同步速度)","CST (循環同步扭力)","Pr (單軸內藏)"]},{"modelCode":"SDC-010F2","seriesType":"SDC-F","powerCode":"010","powerWatts":100,"voltageType":"220V","commType":"CC-Link IE Field Basic","ratedInputVoltage":"單相或三相 200~240 VAC","outputCurrent":1,"controlType":"IGBT-PWM (SVPWM)","dynamicBrake":"軟體內建, 硬體選配","cooling":"自然冷卻 (IP20)","weightKg":1.4,"dimensions":{"w":51,"w1":38,"h":184,"h1":161,"d":174,"d1":12.6,"s":5.5},"hasSTO":true,"internalPositionPr":false,"supportedModes":["PP (位置控制)","PV (速度控制)","PT (扭矩控制)"]},{"modelCode":"SDC-020F2","seriesType":"SDC-F","powerCode":"020","powerWatts":200,"voltageType":"220V","commType":"CC-Link IE Field Basic","ratedInputVoltage":"單相或三相 200~240 VAC","outputCurrent":1.8,"controlType":"IGBT-PWM (SVPWM)","dynamicBrake":"軟體內建, 硬體選配","cooling":"自然冷卻 (IP20)","weightKg":1.4,"dimensions":{"w":51,"w1":38,"h":184,"h1":161,"d":174,"d1":12.6,"s":5.5},"hasSTO":true,"internalPositionPr":false,"supportedModes":["PP (位置控制)","PV (速度控制)","PT (扭矩控制)"]},{"modelCode":"SDC-040F2","seriesType":"SDC-F","powerCode":"040","powerWatts":400,"voltageType":"220V","commType":"CC-Link IE Field Basic","ratedInputVoltage":"單相或三相 200~240 VAC","outputCurrent":3.2,"controlType":"IGBT-PWM (SVPWM)","dynamicBrake":"軟體內建, 硬體選配","cooling":"自然冷卻 (IP20)","weightKg":1.4,"dimensions":{"w":51,"w1":38,"h":184,"h1":161,"d":174,"d1":12.6,"s":5.5},"hasSTO":true,"internalPositionPr":false,"supportedModes":["PP (位置控制)","PV (速度控制)","PT (扭矩控制)"]},{"modelCode":"SDC-075F2","seriesType":"SDC-F","powerCode":"075","powerWatts":750,"voltageType":"220V","commType":"CC-Link IE Field Basic","ratedInputVoltage":"單相或三相 200~240 VAC","outputCurrent":5.8,"controlType":"IGBT-PWM (SVPWM)","dynamicBrake":"軟體內建, 硬體選配","cooling":"風扇冷卻 (IP20)","weightKg":1.7,"dimensions":{"w":51,"w1":38,"h":184,"h1":161,"d":174,"d1":12.6,"s":5.5},"hasSTO":true,"internalPositionPr":false,"supportedModes":["PP (位置控制)","PV (速度控制)","PT (扭矩控制)"]},{"modelCode":"SDC-100F2","seriesType":"SDC-F","powerCode":"100","powerWatts":1000,"voltageType":"220V","commType":"CC-Link IE Field Basic","ratedInputVoltage":"單相或三相 200~240 VAC","outputCurrent":5.8,"controlType":"IGBT-PWM (SVPWM)","dynamicBrake":"軟體內建, 硬體選配","cooling":"風扇冷卻 (IP20)","weightKg":1.7,"dimensions":{"w":51,"w1":38,"h":184,"h1":161,"d":174,"d1":12.6,"s":5.5},"hasSTO":true,"internalPositionPr":false,"supportedModes":["PP (位置控制)","PV (速度控制)","PT (扭矩控制)"]}];
+    const MOTORS = [{"modelCode":"SME-L00530","seriesName":"SME-L","capacityCode":"005","powerWatts":50,"voltageType":"220V","inertiaType":"低慣量","ratedSpeedRpm":3000,"maxSpeedRpm":6000,"ratedTorqueNm":0.16,"maxTorqueNm":0.48,"ratedCurrentA":0.85,"maxCurrentA":2.7,"rotorInertiaJ":0.0295,"rotorInertiaWithBrakeJ":0.0299,"powerRateKwPerSec":8.6,"encoderTypeDefault":"24bit","weightKg":0.33,"weightWithBrakeKg":0.55,"flangeSizeMm":40,"shaftDiameterMm":8,"motorLengthMm":64.5,"motorLengthWithBrakeMm":99.2,"brakeTorqueNm":0.32,"brakePowerW":7.2,"radialLoadN":68.6,"axialLoadN":39.2,"matchingDrivers":["SDC-010A2","SDC-010E2","SDC-010F2"]},{"modelCode":"SME-L01030","seriesName":"SME-L","capacityCode":"010","powerWatts":100,"voltageType":"220V","inertiaType":"低慣量","ratedSpeedRpm":3000,"maxSpeedRpm":6000,"ratedTorqueNm":0.32,"maxTorqueNm":0.96,"ratedCurrentA":0.85,"maxCurrentA":2.7,"rotorInertiaJ":0.0518,"rotorInertiaWithBrakeJ":0.0523,"powerRateKwPerSec":19.6,"encoderTypeDefault":"24bit","weightKg":0.51,"weightWithBrakeKg":0.73,"flangeSizeMm":40,"shaftDiameterMm":8,"motorLengthMm":80,"motorLengthWithBrakeMm":114.7,"brakeTorqueNm":0.32,"brakePowerW":7.2,"radialLoadN":68.6,"axialLoadN":39.2,"matchingDrivers":["SDC-010A2","SDC-010E2","SDC-010F2"]},{"modelCode":"SME-L02030","seriesName":"SME-L","capacityCode":"020","powerWatts":200,"voltageType":"220V","inertiaType":"低慣量","ratedSpeedRpm":3000,"maxSpeedRpm":6000,"ratedTorqueNm":0.64,"maxTorqueNm":1.92,"ratedCurrentA":1.7,"maxCurrentA":5.2,"rotorInertiaJ":0.161,"rotorInertiaWithBrakeJ":0.178,"powerRateKwPerSec":25.2,"encoderTypeDefault":"24bit","weightKg":0.95,"weightWithBrakeKg":1.31,"flangeSizeMm":60,"shaftDiameterMm":14,"motorLengthMm":77,"motorLengthWithBrakeMm":112,"brakeTorqueNm":1.3,"brakePowerW":7.6,"radialLoadN":245,"axialLoadN":98,"matchingDrivers":["SDC-020A2","SDC-020E2","SDC-020F2"]},{"modelCode":"SME-L04030","seriesName":"SME-L","capacityCode":"040","powerWatts":400,"voltageType":"220V","inertiaType":"低慣量","ratedSpeedRpm":3000,"maxSpeedRpm":6000,"ratedTorqueNm":1.27,"maxTorqueNm":3.3,"ratedCurrentA":2.8,"maxCurrentA":7.1,"rotorInertiaJ":0.277,"rotorInertiaWithBrakeJ":0.294,"powerRateKwPerSec":58.5,"encoderTypeDefault":"24bit","weightKg":1.34,"weightWithBrakeKg":1.71,"flangeSizeMm":60,"shaftDiameterMm":14,"motorLengthMm":97,"motorLengthWithBrakeMm":132,"brakeTorqueNm":1.3,"brakePowerW":7.6,"radialLoadN":245,"axialLoadN":98,"matchingDrivers":["SDC-040A2","SDC-040E2","SDC-040F2"]},{"modelCode":"SME-L07530","seriesName":"SME-L","capacityCode":"075","powerWatts":750,"voltageType":"220V","inertiaType":"低慣量","ratedSpeedRpm":3000,"maxSpeedRpm":6000,"ratedTorqueNm":2.4,"maxTorqueNm":6,"ratedCurrentA":5.8,"maxCurrentA":14.1,"rotorInertiaJ":1.07,"rotorInertiaWithBrakeJ":1.11,"powerRateKwPerSec":53.3,"encoderTypeDefault":"24bit","weightKg":2.34,"weightWithBrakeKg":3.07,"flangeSizeMm":80,"shaftDiameterMm":19,"motorLengthMm":102,"motorLengthWithBrakeMm":141,"brakeTorqueNm":2.5,"brakePowerW":8,"radialLoadN":392,"axialLoadN":147,"matchingDrivers":["SDC-075A2","SDC-075E2","SDC-075F2"]},{"modelCode":"SME-L10030","seriesName":"SME-L","capacityCode":"100","powerWatts":1000,"voltageType":"220V","inertiaType":"低慣量","ratedSpeedRpm":3000,"maxSpeedRpm":5000,"ratedTorqueNm":3.2,"maxTorqueNm":8.1,"ratedCurrentA":5.5,"maxCurrentA":14.1,"rotorInertiaJ":1.89,"rotorInertiaWithBrakeJ":1.91,"powerRateKwPerSec":53.6,"encoderTypeDefault":"24bit","weightKg":3.61,"weightWithBrakeKg":4.4,"flangeSizeMm":80,"shaftDiameterMm":19,"motorLengthMm":142,"motorLengthWithBrakeMm":186,"brakeTorqueNm":3.2,"brakePowerW":10,"radialLoadN":392,"axialLoadN":147,"matchingDrivers":["SDC-100A2","SDC-100E2","SDC-100F2"]},{"modelCode":"SME-L10020","seriesName":"SME-L","capacityCode":"100","powerWatts":1000,"voltageType":"220V","inertiaType":"低慣量","ratedSpeedRpm":2000,"maxSpeedRpm":3500,"ratedTorqueNm":4.78,"maxTorqueNm":11.8,"ratedCurrentA":5.8,"maxCurrentA":14.1,"rotorInertiaJ":6.1,"rotorInertiaWithBrakeJ":8,"powerRateKwPerSec":37.6,"encoderTypeDefault":"23bit","weightKg":5.2,"weightWithBrakeKg":7,"flangeSizeMm":130,"shaftDiameterMm":24,"motorLengthMm":127,"motorLengthWithBrakeMm":161,"brakeTorqueNm":16,"brakePowerW":23,"radialLoadN":490,"axialLoadN":196,"matchingDrivers":["SDC-100A2","SDC-100E2","SDC-100F2"]},{"modelCode":"SME-L15020","seriesName":"SME-L","capacityCode":"150","powerWatts":1500,"voltageType":"220V","inertiaType":"低慣量","ratedSpeedRpm":2000,"maxSpeedRpm":3500,"ratedTorqueNm":7.16,"maxTorqueNm":18.5,"ratedCurrentA":8.5,"maxCurrentA":21,"rotorInertiaJ":8.8,"rotorInertiaWithBrakeJ":10.7,"powerRateKwPerSec":58.3,"encoderTypeDefault":"23bit","weightKg":6.5,"weightWithBrakeKg":8.3,"flangeSizeMm":130,"shaftDiameterMm":24,"motorLengthMm":141.5,"motorLengthWithBrakeMm":175.5,"brakeTorqueNm":16,"brakePowerW":23,"radialLoadN":490,"axialLoadN":196,"matchingDrivers":["SDC-150A2"]},{"modelCode":"SME-L20020","seriesName":"SME-L","capacityCode":"200","powerWatts":2000,"voltageType":"220V","inertiaType":"低慣量","ratedSpeedRpm":2000,"maxSpeedRpm":3500,"ratedTorqueNm":9.55,"maxTorqueNm":19.7,"ratedCurrentA":11,"maxCurrentA":21.2,"rotorInertiaJ":11.5,"rotorInertiaWithBrakeJ":13.5,"powerRateKwPerSec":79.3,"encoderTypeDefault":"23bit","weightKg":7.7,"weightWithBrakeKg":9.5,"flangeSizeMm":130,"shaftDiameterMm":24,"motorLengthMm":156,"motorLengthWithBrakeMm":190,"brakeTorqueNm":16,"brakePowerW":23,"radialLoadN":490,"axialLoadN":196,"matchingDrivers":["SDC-200A2"]},{"modelCode":"SME-L30020","seriesName":"SME-L","capacityCode":"300","powerWatts":3000,"voltageType":"220V","inertiaType":"低慣量","ratedSpeedRpm":2000,"maxSpeedRpm":3500,"ratedTorqueNm":14.3,"maxTorqueNm":39.9,"ratedCurrentA":16,"maxCurrentA":42,"rotorInertiaJ":16.7,"rotorInertiaWithBrakeJ":18.7,"powerRateKwPerSec":122.9,"encoderTypeDefault":"23bit","weightKg":10.2,"weightWithBrakeKg":12,"flangeSizeMm":130,"shaftDiameterMm":24,"motorLengthMm":185,"motorLengthWithBrakeMm":219,"brakeTorqueNm":16,"brakePowerW":23,"radialLoadN":490,"axialLoadN":196,"matchingDrivers":["SDC-300A2"]},{"modelCode":"SME-M10020","seriesName":"SME-M","capacityCode":"100","powerWatts":1000,"voltageType":"220V","inertiaType":"中慣量","ratedSpeedRpm":2000,"maxSpeedRpm":3500,"ratedTorqueNm":4.78,"maxTorqueNm":12,"ratedCurrentA":5.8,"maxCurrentA":14.1,"rotorInertiaJ":10.3,"rotorInertiaWithBrakeJ":12.2,"powerRateKwPerSec":22.1,"encoderTypeDefault":"23bit","weightKg":5.6,"weightWithBrakeKg":7.4,"flangeSizeMm":130,"shaftDiameterMm":24,"motorLengthMm":127,"motorLengthWithBrakeMm":161,"brakeTorqueNm":16,"brakePowerW":23,"radialLoadN":490,"axialLoadN":196,"matchingDrivers":["SDC-100A2","SDC-100E2","SDC-100F2"]},{"modelCode":"SME-M15020","seriesName":"SME-M","capacityCode":"150","powerWatts":1500,"voltageType":"220V","inertiaType":"中慣量","ratedSpeedRpm":2000,"maxSpeedRpm":3500,"ratedTorqueNm":7.16,"maxTorqueNm":18.1,"ratedCurrentA":8.5,"maxCurrentA":21,"rotorInertiaJ":15,"rotorInertiaWithBrakeJ":17,"powerRateKwPerSec":34.2,"encoderTypeDefault":"23bit","weightKg":6.9,"weightWithBrakeKg":8.7,"flangeSizeMm":130,"shaftDiameterMm":24,"motorLengthMm":141.5,"motorLengthWithBrakeMm":175.5,"brakeTorqueNm":16,"brakePowerW":23,"radialLoadN":490,"axialLoadN":196,"matchingDrivers":["SDC-150A2"]},{"modelCode":"SME-M20020","seriesName":"SME-M","capacityCode":"200","powerWatts":2000,"voltageType":"220V","inertiaType":"中慣量","ratedSpeedRpm":2000,"maxSpeedRpm":3500,"ratedTorqueNm":9.55,"maxTorqueNm":19.1,"ratedCurrentA":11,"maxCurrentA":21.2,"rotorInertiaJ":32.1,"rotorInertiaWithBrakeJ":42.4,"powerRateKwPerSec":28.4,"encoderTypeDefault":"23bit","weightKg":10.5,"weightWithBrakeKg":15.8,"flangeSizeMm":176,"shaftDiameterMm":35,"motorLengthMm":139,"motorLengthWithBrakeMm":189,"brakeTorqueNm":45,"brakePowerW":34,"radialLoadN":980,"axialLoadN":392,"matchingDrivers":["SDC-200A2"]},{"modelCode":"SME-M30020","seriesName":"SME-M","capacityCode":"300","powerWatts":3000,"voltageType":"220V","inertiaType":"中慣量","ratedSpeedRpm":2000,"maxSpeedRpm":3500,"ratedTorqueNm":14.3,"maxTorqueNm":40.1,"ratedCurrentA":16,"maxCurrentA":42,"rotorInertiaJ":61.2,"rotorInertiaWithBrakeJ":71.6,"powerRateKwPerSec":33.5,"encoderTypeDefault":"23bit","weightKg":15.3,"weightWithBrakeKg":20.6,"flangeSizeMm":176,"shaftDiameterMm":35,"motorLengthMm":169,"motorLengthWithBrakeMm":219,"brakeTorqueNm":45,"brakePowerW":34,"radialLoadN":980,"axialLoadN":392,"matchingDrivers":["SDC-300A2"]},{"modelCode":"SME-H02030","seriesName":"SME-H","capacityCode":"020","powerWatts":200,"voltageType":"220V","inertiaType":"高慣量","ratedSpeedRpm":3000,"maxSpeedRpm":6000,"ratedTorqueNm":0.64,"maxTorqueNm":2.24,"ratedCurrentA":1.7,"maxCurrentA":5.95,"rotorInertiaJ":0.354,"rotorInertiaWithBrakeJ":0.371,"powerRateKwPerSec":11.58,"encoderTypeDefault":"24bit","weightKg":0.86,"weightWithBrakeKg":1.23,"flangeSizeMm":60,"shaftDiameterMm":14,"motorLengthMm":77,"motorLengthWithBrakeMm":112,"brakeTorqueNm":1.3,"brakePowerW":7.9,"radialLoadN":245,"axialLoadN":98,"matchingDrivers":["SDC-020A2","SDC-020E2","SDC-020F2"]},{"modelCode":"SME-H04030","seriesName":"SME-H","capacityCode":"040","powerWatts":400,"voltageType":"220V","inertiaType":"高慣量","ratedSpeedRpm":3000,"maxSpeedRpm":6000,"ratedTorqueNm":1.27,"maxTorqueNm":4.45,"ratedCurrentA":3,"maxCurrentA":10.5,"rotorInertiaJ":0.619,"rotorInertiaWithBrakeJ":0.636,"powerRateKwPerSec":26.15,"encoderTypeDefault":"24bit","weightKg":1.25,"weightWithBrakeKg":1.63,"flangeSizeMm":60,"shaftDiameterMm":14,"motorLengthMm":97,"motorLengthWithBrakeMm":132,"brakeTorqueNm":1.3,"brakePowerW":7.9,"radialLoadN":245,"axialLoadN":98,"matchingDrivers":["SDC-040A2","SDC-040E2","SDC-040F2"]},{"modelCode":"SME-H07530","seriesName":"SME-H","capacityCode":"075","powerWatts":750,"voltageType":"220V","inertiaType":"高慣量","ratedSpeedRpm":3000,"maxSpeedRpm":6000,"ratedTorqueNm":2.4,"maxTorqueNm":8.4,"ratedCurrentA":5.8,"maxCurrentA":20.3,"rotorInertiaJ":1.655,"rotorInertiaWithBrakeJ":1.713,"powerRateKwPerSec":34.33,"encoderTypeDefault":"24bit","weightKg":2.27,"weightWithBrakeKg":3.1,"flangeSizeMm":80,"shaftDiameterMm":19,"motorLengthMm":102,"motorLengthWithBrakeMm":146.5,"brakeTorqueNm":2.5,"brakePowerW":8,"radialLoadN":392,"axialLoadN":147,"matchingDrivers":["SDC-075A2","SDC-075E2","SDC-075F2"]},{"modelCode":"SME-H08515","seriesName":"SME-H","capacityCode":"085","powerWatts":850,"voltageType":"220V","inertiaType":"高慣量","ratedSpeedRpm":1500,"maxSpeedRpm":3500,"ratedTorqueNm":5.4,"maxTorqueNm":13.8,"ratedCurrentA":7.2,"maxCurrentA":20.1,"rotorInertiaJ":13.01,"rotorInertiaWithBrakeJ":14.91,"powerRateKwPerSec":22.51,"encoderTypeDefault":"23bit","weightKg":5.1,"weightWithBrakeKg":6.9,"flangeSizeMm":130,"shaftDiameterMm":24,"motorLengthMm":127,"motorLengthWithBrakeMm":161,"brakeTorqueNm":16,"brakePowerW":23,"radialLoadN":490,"axialLoadN":196,"matchingDrivers":["SDC-100A2","SDC-100E2","SDC-100F2"]},{"modelCode":"SME-H13015","seriesName":"SME-H","capacityCode":"130","powerWatts":1300,"voltageType":"220V","inertiaType":"高慣量","ratedSpeedRpm":1500,"maxSpeedRpm":3500,"ratedTorqueNm":8.3,"maxTorqueNm":23.2,"ratedCurrentA":13.2,"maxCurrentA":40.3,"rotorInertiaJ":19.82,"rotorInertiaWithBrakeJ":21.72,"powerRateKwPerSec":34.56,"encoderTypeDefault":"23bit","weightKg":6.6,"weightWithBrakeKg":8.4,"flangeSizeMm":130,"shaftDiameterMm":24,"motorLengthMm":141.5,"motorLengthWithBrakeMm":175.5,"brakeTorqueNm":16,"brakePowerW":23,"radialLoadN":490,"axialLoadN":196,"matchingDrivers":["SDC-150A2"]},{"modelCode":"SME-H18015","seriesName":"SME-H","capacityCode":"180","powerWatts":1800,"voltageType":"220V","inertiaType":"高慣量","ratedSpeedRpm":1500,"maxSpeedRpm":3500,"ratedTorqueNm":11.5,"maxTorqueNm":28.7,"ratedCurrentA":17.6,"maxCurrentA":48.3,"rotorInertiaJ":26.42,"rotorInertiaWithBrakeJ":28.32,"powerRateKwPerSec":49.7,"encoderTypeDefault":"23bit","weightKg":7.8,"weightWithBrakeKg":9.6,"flangeSizeMm":130,"shaftDiameterMm":24,"motorLengthMm":156,"motorLengthWithBrakeMm":190,"brakeTorqueNm":16,"brakePowerW":23,"radialLoadN":490,"axialLoadN":196,"matchingDrivers":["SDC-200A2"]},{"modelCode":"SMP-H18015","seriesName":"SMP-H","capacityCode":"180","powerWatts":1800,"voltageType":"440V","inertiaType":"高慣量","ratedSpeedRpm":1500,"maxSpeedRpm":3000,"ratedTorqueNm":11.5,"maxTorqueNm":24.1,"ratedCurrentA":8.4,"maxCurrentA":17.6,"rotorInertiaJ":26.1,"rotorInertiaWithBrakeJ":28.1,"powerRateKwPerSec":50.8,"encoderTypeDefault":"23bit","weightKg":8.8,"weightWithBrakeKg":10.76,"flangeSizeMm":130,"shaftDiameterMm":24,"motorLengthMm":184.9,"motorLengthWithBrakeMm":217.4,"brakeTorqueNm":19.6,"brakePowerW":19.5,"radialLoadN":490,"axialLoadN":196,"matchingDrivers":["SDC-200A4"]},{"modelCode":"SMP-H29015","seriesName":"SMP-H","capacityCode":"290","powerWatts":2900,"voltageType":"440V","inertiaType":"高慣量","ratedSpeedRpm":1500,"maxSpeedRpm":3000,"ratedTorqueNm":18.6,"maxTorqueNm":38.6,"ratedCurrentA":11.9,"maxCurrentA":24.7,"rotorInertiaJ":46,"rotorInertiaWithBrakeJ":54.5,"powerRateKwPerSec":75.2,"encoderTypeDefault":"23bit","weightKg":13,"weightWithBrakeKg":19.5,"flangeSizeMm":180,"shaftDiameterMm":35,"motorLengthMm":173.3,"motorLengthWithBrakeMm":231,"brakeTorqueNm":44,"brakePowerW":18.3,"radialLoadN":980,"axialLoadN":392,"matchingDrivers":["SDC-300A4"]},{"modelCode":"SMP-H44015","seriesName":"SMP-H","capacityCode":"440","powerWatts":4400,"voltageType":"440V","inertiaType":"高慣量","ratedSpeedRpm":1500,"maxSpeedRpm":3000,"ratedTorqueNm":28.4,"maxTorqueNm":71.1,"ratedCurrentA":16.5,"maxCurrentA":40.5,"rotorInertiaJ":67.5,"rotorInertiaWithBrakeJ":75.4,"powerRateKwPerSec":119.5,"encoderTypeDefault":"23bit","weightKg":17.5,"weightWithBrakeKg":24,"flangeSizeMm":180,"shaftDiameterMm":35,"motorLengthMm":197.3,"motorLengthWithBrakeMm":255,"brakeTorqueNm":44,"brakePowerW":18.3,"radialLoadN":980,"axialLoadN":392,"matchingDrivers":["SDC-500A4"]},{"modelCode":"SMP-H55015","seriesName":"SMP-H","capacityCode":"550","powerWatts":5500,"voltageType":"440V","inertiaType":"高慣量","ratedSpeedRpm":1500,"maxSpeedRpm":3000,"ratedTorqueNm":35,"maxTorqueNm":87.6,"ratedCurrentA":20.8,"maxCurrentA":52,"rotorInertiaJ":89,"rotorInertiaWithBrakeJ":97.5,"powerRateKwPerSec":137.6,"encoderTypeDefault":"23bit","weightKg":22,"weightWithBrakeKg":27.8,"flangeSizeMm":180,"shaftDiameterMm":42,"motorLengthMm":236.3,"motorLengthWithBrakeMm":278,"brakeTorqueNm":74,"brakePowerW":25,"radialLoadN":980,"axialLoadN":392,"matchingDrivers":["SDC-500A4"]},{"modelCode":"SMP-H75015","seriesName":"SMP-H","capacityCode":"750","powerWatts":7500,"voltageType":"440V","inertiaType":"高慣量","ratedSpeedRpm":1500,"maxSpeedRpm":3000,"ratedTorqueNm":48,"maxTorqueNm":119,"ratedCurrentA":25.7,"maxCurrentA":65,"rotorInertiaJ":125,"rotorInertiaWithBrakeJ":134,"powerRateKwPerSec":184.3,"encoderTypeDefault":"23bit","weightKg":29.5,"weightWithBrakeKg":35,"flangeSizeMm":180,"shaftDiameterMm":42,"motorLengthMm":282.3,"motorLengthWithBrakeMm":324,"brakeTorqueNm":74,"brakePowerW":25,"radialLoadN":980,"axialLoadN":392,"matchingDrivers":["SDC-700A4"]}];
+    const ACCESSORIES = [{"category":"power","partNumber":"SDA-PWCNL1","name":"馬達電源接頭 (小容量無煞車)","voltageClass":"220V","description":"SME-L/H (50W~1kW □80) 無剎車用接頭","compatibleRange":"SME-L005~L100, SME-H020~H075 無剎車"},{"category":"power","partNumber":"SDA-PWCNL1-□M-L/H","name":"馬達電源電纜 (小容量無煞車)","voltageClass":"220V","description":"SME-L/H (50W~1kW □80) 無剎車電纜線組","compatibleRange":"SME-L005~L100, SME-H020~H075","standardLengths":["2m","3m","5m","10m"],"flexTypes":["標準線 (L)","高繞曲線 (H)"]},{"category":"power","partNumber":"SDA-PWCNL2","name":"馬達電源接頭 (小容量帶煞車)","voltageClass":"220V","description":"SME-L/H (50W~1kW □80) 帶剎車用接頭","compatibleRange":"SME-L005~L100, SME-H020~H075 帶剎車"},{"category":"power","partNumber":"SDA-PWCNL2-□M-L/H","name":"馬達電源電纜 (小容量帶煞車)","voltageClass":"220V","description":"SME-L/H (50W~1kW □80) 帶剎車電纜線組","compatibleRange":"SME-L005~L100, SME-H020~H075","standardLengths":["2m","3m","5m","10m"],"flexTypes":["標準線 (L)","高繞曲線 (H)"]},{"category":"power","partNumber":"SDA-PWCNM1-□M-L/H","name":"馬達電源電纜 (中容量無煞車 M1)","voltageClass":"220V","description":"SME-L (1kW~3kW), SME-M (1kW, 1.5kW), SME-H (850W, 1.3kW, 1.8kW) 無剎車","compatibleRange":"SME-L100~L300, SME-M100/150, SME-H085/130/180","standardLengths":["2m","3m","5m","10m"],"flexTypes":["標準線 (L)","高繞曲線 (H)"]},{"category":"power","partNumber":"SDA-PWCNM1B-□M-L/H","name":"馬達電源電纜 (中容量帶煞車 M1B)","voltageClass":"220V","description":"SME-L (1kW~3kW), SME-M (1kW, 1.5kW), SME-H (850W, 1.3kW, 1.8kW) 帶剎車","compatibleRange":"SME-L100~L300, SME-M100/150, SME-H085/130/180","standardLengths":["2m","3m","5m","10m"],"flexTypes":["標準線 (L)","高繞曲線 (H)"]},{"category":"power","partNumber":"SDA-PWCNM2-□M-L/H","name":"馬達電源電纜 (中容量無煞車 M2)","voltageClass":"220V","description":"SME-M (2kW, 3kW) 無剎車","compatibleRange":"SME-M200, SME-M300","standardLengths":["2m","3m","5m","10m"],"flexTypes":["標準線 (L)","高繞曲線 (H)"]},{"category":"power","partNumber":"SDA-PWCNM2B-□M-L/H","name":"馬達電源電纜 (中容量帶煞車 M2B)","voltageClass":"220V","description":"SME-M (2kW, 3kW) 帶剎車","compatibleRange":"SME-M200, SME-M300","standardLengths":["2m","3m","5m","10m"],"flexTypes":["標準線 (L)","高繞曲線 (H)"]},{"category":"power","partNumber":"SDP-PWCNH1-□M-L/H","name":"440V 馬達電源電纜 (1.8kW)","voltageClass":"440V","description":"SMP-H (1.8kW)","compatibleRange":"SMP-H180","standardLengths":["2m","3m","5m","10m"],"flexTypes":["標準線 (L)","高繞曲線 (H)"]},{"category":"power","partNumber":"SDP-PWCNH2-□M-L/H","name":"440V 馬達電源電纜 (2.9kW/4.4kW 無煞車)","voltageClass":"440V","description":"SMP-H (2.9kW, 4.4kW 無剎車)","compatibleRange":"SMP-H290, SMP-H440","standardLengths":["2m","3m","5m","10m"],"flexTypes":["標準線 (L)","高繞曲線 (H)"]},{"category":"power","partNumber":"SDP-PWCNH3-□M-L/H","name":"440V 馬達電源電纜 (帶煞/大容量)","voltageClass":"440V","description":"SMP-H (2.9kW, 4.4kW 帶剎車) 及 SMP-H (5.5kW, 7.5kW)","compatibleRange":"SMP-H290B, SMP-H440B, SMP-H550, SMP-H750","standardLengths":["2m","3m","5m","10m"],"flexTypes":["標準線 (L)","高繞曲線 (H)"]},{"category":"power","partNumber":"SDP-BKCNS1-□M-L/H","name":"440V 專用煞車線組","voltageClass":"440V","description":"SMP-H (1.8kW~7.5kW) 獨立煞車連接線","compatibleRange":"SMP-H 附煞車機種","standardLengths":["2m","3m","5m","10m"],"flexTypes":["標準線 (L)","高繞曲線 (H)"]},{"category":"encoder","partNumber":"SDH-ENL-□M-L/H","name":"編碼器電纜 (小容量 SME-L/H □80)","voltageClass":"220V","description":"50W~1kW (□80) 馬達編碼器回授線 (CN2)","compatibleRange":"SME-L005~L100, SME-H020~H075","standardLengths":["2m","3m","5m","10m"],"flexTypes":["標準線 (L)","高繞曲線 (H)"]},{"category":"encoder","partNumber":"SDH-ENM-□M-L/H","name":"編碼器電纜 (中容量 SME-L/M/H)","voltageClass":"220V","description":"1kW~3kW 系列馬達編碼器回授線 (CN2)","compatibleRange":"SME-L100~L300, SME-M100~M300, SME-H085~H180","standardLengths":["2m","3m","5m","10m"],"flexTypes":["標準線 (L)","高繞曲線 (H)"]},{"category":"encoder","partNumber":"SDP-ENM-□M-L/H","name":"編碼器電纜 (440V SMP-H)","voltageClass":"440V","description":"1.8kW~7.5kW (440V) 編碼器回授線 (CN2)","compatibleRange":"SMP-H180 ~ SMP-H750","standardLengths":["2m","3m","5m","10m"],"flexTypes":["標準線 (L)","高繞曲線 (H)"]},{"category":"io","partNumber":"SDA-CN1","name":"CN1 I/O 焊接頭 (50-pin)","voltageClass":"通用","description":"適用 SDC-A 系列 50-pin 數位/類比 I/O 插頭","compatibleRange":"SDC-A, SDC-A(M)"},{"category":"terminal","partNumber":"SDA-TB50","name":"CN1 轉接端子台 (50-pin)","voltageClass":"通用","description":"50-pin 端子台模組，免焊接直接鎖螺絲配線","compatibleRange":"SDC-A"},{"category":"terminal","partNumber":"SDA-TBL05M / 1M / 2M","name":"CN1 轉接端子台連接線 (50-pin)","voltageClass":"通用","description":"連接 SDC-A 與 SDA-TB50 端子台之雙頭排線 (0.5m / 1m / 2m)","compatibleRange":"SDC-A"},{"category":"io","partNumber":"SDCE-CN1","name":"SDC-E / F CN1 I/O 插頭 (15-pin)","voltageClass":"通用","description":"適用 SDC-E, SDC-F 網路型通訊伺服 15-pin 專用插頭","compatibleRange":"SDC-E, SDC-F"},{"category":"terminal","partNumber":"SDCE-TB15","name":"SDC-E / F 轉接端子台 (15-pin)","voltageClass":"通用","description":"15-pin 端子台模組，通訊型驅動器快速配線","compatibleRange":"SDC-E, SDC-F"},{"category":"terminal","partNumber":"SDCE-TBL05M / 1M / 2M","name":"SDC-E / F 端子台連接線 (15-pin)","voltageClass":"通用","description":"連接 SDC-E/F 與 SDCE-TB15 端子台之排線 (0.5m / 1m / 2m)","compatibleRange":"SDC-E, SDC-F"},{"category":"battery","partNumber":"SDH-BAT-SET","name":"絕對型編碼器記憶電池組 (帶線盒)","voltageClass":"通用","description":"多圈絕對型編碼器斷電記憶備份電池盒組 (CN5 插入)","compatibleRange":"全系列搭配絕對型編碼器"},{"category":"battery","partNumber":"SDH-BAT","name":"絕對型編碼器備用鋰電池","voltageClass":"通用","description":"更換用鋰電池芯 (ER14505)","compatibleRange":"全系列搭配絕對型編碼器"},{"category":"comm","partNumber":"SDA-USB3M","name":"PC 參數調機 USB 連接線 (3m)","voltageClass":"通用","description":"連接 PC 伺服調機軟體與 CN4 Mini-USB 連接埠","compatibleRange":"全系列 SDC 驅動器"},{"category":"sto","partNumber":"SDP-CN6-□M","name":"STO 安全機能控制通訊線","voltageClass":"通用","description":"SDC-E / SDC-F 專用 STO (Safe Torque Off) 安全回路線","compatibleRange":"SDC-E, SDC-F","standardLengths":["1m","2m","3m"]},{"category":"sto","partNumber":"SDC-CN6-05M","name":"STO 雙軸短接跳接線 (0.5m)","voltageClass":"通用","description":"多軸串接或 STO 跨接用線","compatibleRange":"SDC-E, SDC-F"}];
+    const PACKAGES = [{"packageId":"PKG-E220-100L-NB","name":"100W EtherCAT 精準小容量低慣量套組","targetApplication":"半導體引線鍵合機、晶圓取放機、微型精密檢測平台","voltage":"220V","powerWatts":100,"commType":"EtherCAT","inertiaType":"低慣量","hasBrake":false,"driver":{"model":"SDC-010E2","power":"100W","input":"單相/三相 200~240V","series":"SDC-E","hasSTO":true},"motor":{"model":"SME-L01030MAB","ratedSpeed":3000,"maxSpeed":6000,"ratedTorque":0.32,"maxTorque":0.96,"flangeSize":40,"shaftDiameter":8,"encoderResolution":"24bit 光學絕對型 (16,777,216 p/r)"},"cables":{"powerCable":"SDA-PWCNL1-3M-L (3m 標準動力線)","encoderCable":"SDH-ENL-3M-L (3m 24bit 編碼器線)","ioConnectorOrTerminal":"SDCE-CN1 (15-pin 專用 I/O 接頭)","batterySet":"SDH-BAT-SET (絕對型電池組)","usbCable":"SDA-USB3M (3m Mini-USB 調機線)","stoCable":"SDP-CN6-2M (2m STO 安全回路線)"}},{"packageId":"PKG-E220-400L-NB","name":"400W EtherCAT 高速主流低慣量套組","targetApplication":"SMT 表面貼片機、點膠機、高速視覺篩選機","voltage":"220V","powerWatts":400,"commType":"EtherCAT","inertiaType":"低慣量","hasBrake":false,"driver":{"model":"SDC-040E2","power":"400W","input":"單相/三相 200~240V","series":"SDC-E","hasSTO":true},"motor":{"model":"SME-L04030MAB","ratedSpeed":3000,"maxSpeed":6000,"ratedTorque":1.27,"maxTorque":3.3,"flangeSize":60,"shaftDiameter":14,"encoderResolution":"24bit 光學絕對型"},"cables":{"powerCable":"SDA-PWCNL1-3M-L (3m 標準動力線)","encoderCable":"SDH-ENL-3M-L (3m 編碼器線)","ioConnectorOrTerminal":"SDCE-TB15 + SDCE-TBL1M (15-pin 端子台組)","batterySet":"SDH-BAT-SET (絕對型電池組)","usbCable":"SDA-USB3M (3m Mini-USB 調機線)","stoCable":"SDP-CN6-2M (2m STO 安全線)"}},{"packageId":"PKG-E220-400L-BK","name":"400W EtherCAT 垂直升降附煞車套組","targetApplication":"Z 軸升降機構、垂直搬運手臂、點膠壓頭、無斷電跌落風險","voltage":"220V","powerWatts":400,"commType":"EtherCAT","inertiaType":"低慣量","hasBrake":true,"driver":{"model":"SDC-040E2","power":"400W","input":"單相/三相 200~240V","series":"SDC-E","hasSTO":true},"motor":{"model":"SME-L04030MBB","ratedSpeed":3000,"maxSpeed":6000,"ratedTorque":1.27,"maxTorque":3.3,"flangeSize":60,"shaftDiameter":14,"encoderResolution":"24bit 光學絕對型 (附 1.3Nm 電磁煞車)"},"cables":{"powerCable":"SDA-PWCNL2-3M-L (3m 附煞車專用電源線)","encoderCable":"SDH-ENL-3M-L (3m 編碼器線)","ioConnectorOrTerminal":"SDCE-TB15 + SDCE-TBL1M (端子台組)","batterySet":"SDH-BAT-SET (絕對型電池組)","usbCable":"SDA-USB3M (3m 調機線)","stoCable":"SDP-CN6-2M (2m STO 安全線)"}},{"packageId":"PKG-E220-750L-NB","name":"750W EtherCAT 標配低慣量套組","targetApplication":"自動鎖螺絲機、SCARA 水平關節機器人、包裝分揀機","voltage":"220V","powerWatts":750,"commType":"EtherCAT","inertiaType":"低慣量","hasBrake":false,"driver":{"model":"SDC-075E2","power":"750W","input":"單相/三相 200~240V","series":"SDC-E","hasSTO":true},"motor":{"model":"SME-L07530MAB","ratedSpeed":3000,"maxSpeed":6000,"ratedTorque":2.4,"maxTorque":6,"flangeSize":80,"shaftDiameter":19,"encoderResolution":"24bit 光學絕對型"},"cables":{"powerCable":"SDA-PWCNL1-5M-H (5m 高繞曲動力電纜)","encoderCable":"SDH-ENL-5M-H (5m 高繞曲編碼器電纜)","ioConnectorOrTerminal":"SDCE-TB15 + SDCE-TBL1M (端子台組)","batterySet":"SDH-BAT-SET (絕對型電池組)","usbCable":"SDA-USB3M (3m Mini-USB)","stoCable":"SDP-CN6-2M (STO 線)"}},{"packageId":"PKG-E220-1000M-NB","name":"1.0kW EtherCAT 中容量中慣量平衡套組","targetApplication":"自動倉儲 AGV 走形軸、CNC 雕刻機 X/Y 軸、印刷機輪系","voltage":"220V","powerWatts":1000,"commType":"EtherCAT","inertiaType":"中慣量","hasBrake":false,"driver":{"model":"SDC-100E2","power":"1.0kW","input":"單相/三相 200~240V","series":"SDC-E","hasSTO":true},"motor":{"model":"SME-M10020MAB","ratedSpeed":2000,"maxSpeed":3500,"ratedTorque":4.78,"maxTorque":12,"flangeSize":130,"shaftDiameter":24,"encoderResolution":"23bit 光學絕對型"},"cables":{"powerCable":"SDA-PWCNM1-5M-L (5m 中容量動力電纜)","encoderCable":"SDH-ENM-5M-L (5m 中容量編碼器電纜)","ioConnectorOrTerminal":"SDCE-TB15 + SDCE-TBL1M (端子台組)","batterySet":"SDH-BAT-SET (絕對型電池組)","usbCable":"SDA-USB3M (3m Mini-USB)","stoCable":"SDP-CN6-2M (STO 線)"}},{"packageId":"PKG-A220-400L-NB","name":"400W 脈衝/Modbus 泛用低慣量套組","targetApplication":"PLC 脈衝定位 (Pt Mode)、單軸內藏 (Pr Mode 64段位置編輯)","voltage":"220V","powerWatts":400,"commType":"Modbus (Pulse)","inertiaType":"低慣量","hasBrake":false,"driver":{"model":"SDC-040A2","power":"400W","input":"單相 200~240V","series":"SDC-A","hasSTO":false},"motor":{"model":"SME-L04030MAB","ratedSpeed":3000,"maxSpeed":6000,"ratedTorque":1.27,"maxTorque":3.3,"flangeSize":60,"shaftDiameter":14,"encoderResolution":"22bit 光學絕對型 / 17bit 磁編"},"cables":{"powerCable":"SDA-PWCNL1-3M-L (3m 動力線)","encoderCable":"SDH-ENL-3M-L (3m 編碼器線)","ioConnectorOrTerminal":"SDA-TB50 + SDA-TBL1M (50-pin 螺絲快速端子台組)","batterySet":"SDH-BAT-SET (絕對型電池組)","usbCable":"SDA-USB3M (3m Mini-USB)"}},{"packageId":"PKG-A220-750L-BK","name":"750W 脈衝/Modbus 垂直升降附煞車套組","targetApplication":"升降升降機台、多軸機械手 Z 軸、沖床下壓保護","voltage":"220V","powerWatts":750,"commType":"Modbus (Pulse)","inertiaType":"低慣量","hasBrake":true,"driver":{"model":"SDC-075A2","power":"750W","input":"單相 200~240V","series":"SDC-A","hasSTO":false},"motor":{"model":"SME-L07530MBB","ratedSpeed":3000,"maxSpeed":6000,"ratedTorque":2.4,"maxTorque":6,"flangeSize":80,"shaftDiameter":19,"encoderResolution":"22bit 光學絕對型 (附 2.5Nm 電磁煞車)"},"cables":{"powerCable":"SDA-PWCNL2-3M-L (3m 帶煞車動力線)","encoderCable":"SDH-ENL-3M-L (3m 編碼器線)","ioConnectorOrTerminal":"SDA-TB50 + SDA-TBL1M (50-pin 端子台組)","batterySet":"SDH-BAT-SET (絕對型電池組)","usbCable":"SDA-USB3M (3m Mini-USB)"}},{"packageId":"PKG-A220-2000M-NB","name":"2.0kW 脈衝/類比 中容量重載套組","targetApplication":"龍門銑床、重型進給滑台、薄膜分切機張力控制 (T Mode)","voltage":"220V","powerWatts":2000,"commType":"Modbus (Pulse)","inertiaType":"中慣量","hasBrake":false,"driver":{"model":"SDC-200A2","power":"2.0kW","input":"三相 200~240V (硬體回生)","series":"SDC-A","hasSTO":false},"motor":{"model":"SME-M20020MAB","ratedSpeed":2000,"maxSpeed":3500,"ratedTorque":9.55,"maxTorque":19.1,"flangeSize":176,"shaftDiameter":35,"encoderResolution":"23bit 光學絕對型"},"cables":{"powerCable":"SDA-PWCNM2-5M-L (5m 大電流動力電纜)","encoderCable":"SDH-ENM-5M-L (5m 中容量編碼器電纜)","ioConnectorOrTerminal":"SDA-TB50 + SDA-TBL1M (50-pin 端子台組)","batterySet":"SDH-BAT-SET (絕對型電池組)","usbCable":"SDA-USB3M (3m Mini-USB)"}},{"packageId":"PKG-F220-400L-NB","name":"400W CC-Link IEFB 三菱系統連線套組","targetApplication":"搭配三菱 iQ-F/iQ-R 系列 PLC，透過乙太網雙絞線實測可控 16 軸","voltage":"220V","powerWatts":400,"commType":"CC-Link IE Field Basic","inertiaType":"低慣量","hasBrake":false,"driver":{"model":"SDC-040F2","power":"400W","input":"單相/三相 200~240V","series":"SDC-F","hasSTO":true},"motor":{"model":"SME-L04030MAB","ratedSpeed":3000,"maxSpeed":6000,"ratedTorque":1.27,"maxTorque":3.3,"flangeSize":60,"shaftDiameter":14,"encoderResolution":"24bit 光學絕對型"},"cables":{"powerCable":"SDA-PWCNL1-3M-L (3m 動力線)","encoderCable":"SDH-ENL-3M-L (3m 編碼器線)","ioConnectorOrTerminal":"SDCE-CN1 (15-pin 專用接頭)","batterySet":"SDH-BAT-SET (絕對型電池組)","usbCable":"SDA-USB3M (3m Mini-USB)","stoCable":"SDP-CN6-2M (2m STO 線)"}},{"packageId":"PKG-A440-1800H-NB","name":"1.8kW 440V 工業高壓高慣量套組","targetApplication":"食品包裝機、金屬成型機台、廠區 380~480V 供電環境","voltage":"440V","powerWatts":1800,"commType":"Modbus (Pulse)","inertiaType":"高慣量","hasBrake":false,"driver":{"model":"SDC-200A4","power":"1.8kW","input":"三相 380~480V","series":"SDC-A","hasSTO":false},"motor":{"model":"SMP-H18015MAB-4","ratedSpeed":1500,"maxSpeed":3000,"ratedTorque":11.5,"maxTorque":24.1,"flangeSize":130,"shaftDiameter":24,"encoderResolution":"23bit 光學絕對型"},"cables":{"powerCable":"SDP-PWCNH1-5M-L (5m 440V 專用動力電纜)","encoderCable":"SDP-ENM-5M-L (5m 440V 編碼器電纜)","ioConnectorOrTerminal":"SDA-TB50 + SDA-TBL1M (50-pin 端子台組)","batterySet":"SDH-BAT-SET (絕對型電池組)","usbCable":"SDA-USB3M (3m Mini-USB)"}},{"packageId":"PKG-A440-4400H-NB","name":"4.4kW 440V 重工業級高轉矩套組","targetApplication":"橡膠押出機、工具機轉塔、伺服油壓替換系統","voltage":"440V","powerWatts":4400,"commType":"Modbus (Pulse)","inertiaType":"高慣量","hasBrake":false,"driver":{"model":"SDC-500A4","power":"4.4kW","input":"三相 380~480V","series":"SDC-A","hasSTO":false},"motor":{"model":"SMP-H44015MAB-4","ratedSpeed":1500,"maxSpeed":3000,"ratedTorque":28.4,"maxTorque":71.1,"flangeSize":180,"shaftDiameter":35,"encoderResolution":"23bit 高慣量光學絕對型"},"cables":{"powerCable":"SDP-PWCNH2-5M-L (5m 440V 重載動力線)","encoderCable":"SDP-ENM-5M-L (5m 440V 編碼器線)","ioConnectorOrTerminal":"SDA-TB50 + SDA-TBL1M (50-pin 端子台組)","batterySet":"SDH-BAT-SET (絕對型電池組)","usbCable":"SDA-USB3M (3m Mini-USB)"}},{"packageId":"PKG-A440-7500H-NB","name":"7.5kW 440V 旗艦超大出力套組","targetApplication":"巨型龍門加工中心機、沖壓送料機、重型卷取輪軸","voltage":"440V","powerWatts":7500,"commType":"Modbus (Pulse)","inertiaType":"高慣量","hasBrake":false,"driver":{"model":"SDC-700A4","power":"7.5kW","input":"三相 380~480V","series":"SDC-A","hasSTO":false},"motor":{"model":"SMP-H75015MAB-4","ratedSpeed":1500,"maxSpeed":3000,"ratedTorque":48,"maxTorque":119,"flangeSize":180,"shaftDiameter":42,"encoderResolution":"23bit 高慣量光學絕對型"},"cables":{"powerCable":"SDP-PWCNH3-5M-L (5m 440V 7.5kW 專用動力電纜)","encoderCable":"SDP-ENM-5M-L (5m 440V 編碼器電纜)","ioConnectorOrTerminal":"SDA-TB50 + SDA-TBL1M (50-pin 端子台組)","batterySet":"SDH-BAT-SET (絕對型電池組)","usbCable":"SDA-USB3M (3m Mini-USB)"}}];
+
+    // Navigation Switcher
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+      document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+      
+      const target = document.getElementById('tab-' + tabId);
+      if (target) target.style.display = 'block';
+      
+      const btns = document.querySelectorAll('.nav-btn');
+      btns.forEach(btn => {
+        if (btn.getAttribute('onclick').includes(tabId)) btn.classList.add('active');
+      });
+
+      if (tabId === 'sizing') calcSizing();
+      if (tabId === 'wiring') renderWiring('Pt');
+    }
+
+    // Render Package Table
+    function renderPackages() {
+      const volt = document.getElementById('pkg-filter-volt').value;
+      const comm = document.getElementById('pkg-filter-comm').value;
+      const search = document.getElementById('pkg-search').value.toLowerCase();
+
+      const tbody = document.getElementById('package-tbody');
+      tbody.innerHTML = '';
+
+      const filtered = PACKAGES.filter(p => {
+        if (volt !== 'all' && p.voltage !== volt) return false;
+        if (comm !== 'all' && p.commType !== comm) return false;
+        if (search) {
+          const match = p.name.toLowerCase().includes(search) ||
+                        p.packageId.toLowerCase().includes(search) ||
+                        p.driver.model.toLowerCase().includes(search) ||
+                        p.motor.model.toLowerCase().includes(search);
+          if (!match) return false;
+        }
+        return true;
+      });
+
+      filtered.forEach(p => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>
+            <div style="font-weight: 700; color: #ffffff;">${p.name}</div>
+            <div style="font-size: 10px; color: #94a3b8; font-family: monospace;">${p.packageId}</div>
+          </td>
+          <td>
+            <div class="mono text-emerald">${p.powerWatts} W</div>
+            <div style="font-size: 10px; color: #94a3b8;">${p.voltage} (${p.inertiaType})</div>
+          </td>
+          <td class="text-sky">${p.commType}</td>
+          <td class="mono" style="color: #ffffff; font-weight: 700;">${p.driver.model}</td>
+          <td class="mono" style="color: #ffffff; font-weight: 700;">${p.motor.model}</td>
+          <td class="mono" style="font-size: 11px;">${p.cables.powerCable.split(' ')[0]}</td>
+          <td class="mono" style="font-size: 11px;">${p.cables.encoderCable.split(' ')[0]}</td>
+          <td>${p.hasBrake ? '<span style="color:#f43f5e; font-weight:700;">附電磁煞車</span>' : '<span style="color:#64748b;">無煞車</span>'}</td>
+          <td style="text-align: right;">
+            <button class="btn-sm" onclick="showPackageModal('${p.packageId}')">查看明細</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Modal Details
+    let currentModalPkg = null;
+    function showPackageModal(pkgId) {
+      const p = PACKAGES.find(x => x.packageId === pkgId);
+      if (!p) return;
+      currentModalPkg = p;
+      document.getElementById('modal-title').innerText = p.name;
+      document.getElementById('modal-id').innerText = p.packageId + ' · 適用工藝: ' + p.targetApplication;
+
+      const body = document.getElementById('modal-body');
+      body.innerHTML = `
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+          <div style="background:#020617; padding:12px; border-radius:8px; border:1px solid #1e293b;">
+            <strong style="color:#38bdf8; display:block; margin-bottom:4px;">1. 驅動器規格 (Driver)</strong>
+            <div>型號: <strong style="color:#fff;" class="mono">${p.driver.model}</strong></div>
+            <div>容量/電壓: ${p.driver.power} (${p.driver.input})</div>
+            <div>通訊架構: ${p.commType}</div>
+            <div>STO安全: ${p.driver.hasSTO ? '內建硬體級 STO' : '標準泛用型'}</div>
+          </div>
+          <div style="background:#020617; padding:12px; border-radius:8px; border:1px solid #1e293b;">
+            <strong style="color:#c084fc; display:block; margin-bottom:4px;">2. 伺服馬達規格 (Motor)</strong>
+            <div>型號: <strong style="color:#fff;" class="mono">${p.motor.model}</strong></div>
+            <div>額定/最大轉矩: ${p.motor.ratedTorque} / ${p.motor.maxTorque} Nm</div>
+            <div>轉速: 額定 ${p.motor.ratedSpeed} / 最高 ${p.motor.maxSpeed} rpm</div>
+            <div>編碼器: ${p.motor.encoderResolution}</div>
+          </div>
+        </div>
+
+        <div style="background:#020617; padding:12px; border-radius:8px; border:1px solid #1e293b;">
+          <strong style="color:#fbbf24; display:block; margin-bottom:6px;">3. 成套包含之原廠專用線材與配件 (Turnkey BOM)</strong>
+          <div style="display:flex; justify-content:space-between; padding:3px 0; border-bottom:1px solid #1e293b;">
+            <span style="color:#94a3b8;">馬達動力電纜:</span>
+            <span class="mono" style="color:#fff; font-weight:600;">${p.cables.powerCable}</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; padding:3px 0; border-bottom:1px solid #1e293b;">
+            <span style="color:#94a3b8;">編碼器回授線:</span>
+            <span class="mono" style="color:#fff; font-weight:600;">${p.cables.encoderCable}</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; padding:3px 0; border-bottom:1px solid #1e293b;">
+            <span style="color:#94a3b8;">I/O 端子台或插頭:</span>
+            <span class="mono" style="color:#fff; font-weight:600;">${p.cables.ioConnectorOrTerminal}</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; padding:3px 0; border-bottom:1px solid #1e293b;">
+            <span style="color:#94a3b8;">絕對值電池盒組:</span>
+            <span class="mono" style="color:#fff; font-weight:600;">${p.cables.batterySet}</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; padding:3px 0;">
+            <span style="color:#94a3b8;">PC USB 調機通訊線:</span>
+            <span class="mono" style="color:#fff; font-weight:600;">${p.cables.usbCable}</span>
+          </div>
+        </div>
+      `;
+      document.getElementById('modal-pkg').classList.add('active');
+    }
+
+    function closeModalDirect() {
+      document.getElementById('modal-pkg').classList.remove('active');
+    }
+    function closeModal(e) {
+      if (e.target.id === 'modal-pkg') closeModalDirect();
+    }
+    function copyModalContent() {
+      if (!currentModalPkg) return;
+      const text = `士林 SDC 成套選用料號:
+套組代碼: ${currentModalPkg.packageId} (${currentModalPkg.name})
+驅動器: ${currentModalPkg.driver.model}
+馬達: ${currentModalPkg.motor.model}
+動力線: ${currentModalPkg.cables.powerCable}
+編碼器線: ${currentModalPkg.cables.encoderCable}
+配件: ${currentModalPkg.cables.ioConnectorOrTerminal} / ${currentModalPkg.cables.batterySet}`;
+      navigator.clipboard.writeText(text);
+      alert('已複製此成套訂購規格清單！');
+    }
+
+    // Sizing Calculation Engine
+    function calcSizing() {
+      const mass = parseFloat(document.getElementById('size-mass').value) || 30;
+      const speed = parseFloat(document.getElementById('size-speed').value) || 18;
+      const accel = Math.max(parseFloat(document.getElementById('size-accel').value) || 0.15, 0.02);
+      const ratio = Math.max(parseFloat(document.getElementById('size-ratio').value) || 1, 1);
+      const fric = parseFloat(document.getElementById('size-fric').value) || 0.02;
+      const isVertical = document.getElementById('size-angle').value === 'vertical';
+
+      const leadM = (parseFloat(document.getElementById('size-screw-p').value) || 10) / 1000;
+      const diamM = (parseFloat(document.getElementById('size-screw-d').value) || 20) / 1000;
+      const lenM = (parseFloat(document.getElementById('size-screw-l').value) || 600) / 1000;
+
+      // Inertia: screw + mass
+      const jScrew = (Math.PI / 32) * 7850 * lenM * Math.pow(diamM, 4);
+      const jMass = mass * Math.pow(leadM / (2 * Math.PI), 2);
+      const totalJ = ((jScrew + jMass) / Math.pow(ratio, 2)) * 10000; // in 10^-4 kg.m^2
+
+      const motorRpm = Math.round((speed / leadM) * ratio);
+
+      let forceN = fric * mass * 9.81;
+      let gravTorque = 0;
+      if (isVertical) {
+        forceN = mass * 9.81;
+      }
+      const movingTorque = (forceN * leadM) / (2 * Math.PI * 0.9 * ratio);
+      
+      const omega = (2 * Math.PI * motorRpm) / 60;
+      const accelTorque = ((totalJ + 0.3) * 1e-4 * (omega / accel)) / 0.9;
+      const totalPeak = accelTorque + movingTorque;
+      const trms = Math.sqrt(Math.pow(totalPeak, 2) * 0.3 + Math.pow(movingTorque, 2) * 0.7);
+
+      document.getElementById('res-jl').innerText = totalJ.toFixed(3) + ' ×10⁻⁴ kg·m²';
+      document.getElementById('res-rpm').innerText = motorRpm + ' rpm';
+      document.getElementById('res-trms').innerText = trms.toFixed(2) + ' N·m';
+      document.getElementById('res-tpeak').innerText = totalPeak.toFixed(2) + ' N·m';
+
+      let suggW = 100;
+      if (trms > 12) suggW = 3000;
+      else if (trms > 8) suggW = 2000;
+      else if (trms > 5) suggW = 1500;
+      else if (trms > 3) suggW = 1000;
+      else if (trms > 2.0) suggW = 750;
+      else if (trms > 1.0) suggW = 400;
+      else if (trms > 0.5) suggW = 200;
+
+      document.getElementById('res-sugg-power').innerText = '≥ ' + suggW + ' W';
+      document.getElementById('res-notes').innerText = isVertical 
+        ? '注意：垂直軸運轉請使用負載率 75% 以下規格，並選配附電磁煞車馬達！'
+        : '計算完成。建議選用額定轉矩高於 ' + trms.toFixed(2) + ' Nm 之馬達。';
+
+      renderTnCurve(motorRpm, trms);
+    }
+
+    // Dynamic TN Curve SVG
+    function renderTnCurve(opRpm, opTorque) {
+      const svg = document.getElementById('tn-svg');
+      svg.innerHTML = `
+        <defs>
+          <linearGradient id="gCont" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#10b981" stop-opacity="0.3"/>
+            <stop offset="100%" stop-color="#10b981" stop-opacity="0.05"/>
+          </linearGradient>
+          <linearGradient id="gPeak" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#f43f5e" stop-opacity="0.25"/>
+            <stop offset="100%" stop-color="#f43f5e" stop-opacity="0.05"/>
+          </linearGradient>
+        </defs>
+        <!-- Grid -->
+        <line x1="50" y1="180" x2="470" y2="180" stroke="#334155" stroke-width="1.5"/>
+        <line x1="50" y1="30" x2="50" y2="180" stroke="#334155" stroke-width="1.5"/>
+        <text x="470" y="200" fill="#94a3b8" font-size="10" text-anchor="end">轉速 (rpm)</text>
+        <text x="50" y="20" fill="#94a3b8" font-size="10">轉矩 (N·m)</text>
+
+        <!-- Peak zone -->
+        <path d="M 50 50 L 280 50 L 440 120 L 440 180 L 50 180 Z" fill="url(#gPeak)" stroke="#f43f5e" stroke-width="2"/>
+        <!-- Continuous zone -->
+        <path d="M 50 100 L 280 100 L 440 145 L 440 180 L 50 180 Z" fill="url(#gCont)" stroke="#10b981" stroke-width="2"/>
+
+        <text x="140" y="85" fill="#34d399" font-size="10" font-weight="bold">連續運轉區域 (Continuous)</text>
+        <text x="140" y="42" fill="#fb7185" font-size="10" font-weight="bold">短時間運轉區域 (Peak)</text>
+
+        <!-- Operating Point -->
+        <circle cx="${Math.min(50 + (opRpm/6000)*390, 460)}" cy="${Math.max(180 - (opTorque/4.0)*130, 35)}" r="5" fill="#38bdf8" stroke="#ffffff" stroke-width="2"/>
+        <text x="${Math.min(60 + (opRpm/6000)*390, 380)}" y="${Math.max(170 - (opTorque/4.0)*130, 45)}" fill="#38bdf8" font-size="10" font-family="monospace">
+          工作點: ${opRpm}rpm / ${opTorque.toFixed(2)}Nm
+        </text>
+      `;
+    }
+
+    // Wiring Schematic Renderer
+    function renderWiring(mode) {
+      const svg = document.getElementById('wiring-svg');
+      svg.innerHTML = `
+        <rect x="20" y="30" width="100" height="80" rx="6" fill="#0f172a" stroke="#475569" stroke-width="1.5"/>
+        <text x="70" y="55" fill="#38bdf8" font-size="11" font-weight="bold" text-anchor="middle">主回路電源</text>
+        <text x="70" y="75" fill="#94a3b8" font-size="9" text-anchor="middle">200~240VAC</text>
+        <text x="70" y="92" fill="#ef4444" font-size="9" text-anchor="middle">NFB + MC</text>
+
+        <!-- Driver Box -->
+        <rect x="180" y="20" width="220" height="320" rx="8" fill="#0f172a" stroke="#10b981" stroke-width="2"/>
+        <text x="290" y="45" fill="#34d399" font-size="13" font-weight="bold" text-anchor="middle">士林 SDC 伺服驅動器</text>
+
+        <rect x="200" y="60" width="80" height="70" rx="4" fill="#020617" stroke="#334155"/>
+        <text x="240" y="80" fill="#94a3b8" font-size="9" text-anchor="middle">主電源 (L1/L2/L3)</text>
+        <text x="240" y="105" fill="#ef4444" font-size="10" font-family="monospace" text-anchor="middle">L1, L2, L3</text>
+
+        <rect x="200" y="145" width="180" height="90" rx="4" fill="#020617" stroke="#38bdf8"/>
+        <text x="290" y="165" fill="#38bdf8" font-size="10" font-weight="bold" text-anchor="middle">CN1 控制埠 (${mode} 模式)</text>
+        <text x="210" y="185" fill="#cbd5e1" font-size="9">DI1: SON 伺服使能</text>
+        <text x="210" y="200" fill="#cbd5e1" font-size="9">DI2/3: 正反轉極限 (LSP/LSN)</text>
+        <text x="210" y="215" fill="#cbd5e1" font-size="9">DO1: INP 定位完成 / RD 伺服準備</text>
+
+        <rect x="200" y="250" width="180" height="60" rx="4" fill="#020617" stroke="#22c55e"/>
+        <text x="290" y="270" fill="#4ade80" font-size="10" font-weight="bold" text-anchor="middle">馬達動力 (U, V, W, PE)</text>
+
+        <!-- Motor Box -->
+        <rect x="460" y="110" width="110" height="130" rx="8" fill="#0f172a" stroke="#38bdf8" stroke-width="1.5"/>
+        <text x="515" y="135" fill="#38bdf8" font-size="11" font-weight="bold" text-anchor="middle">SME / SMP 馬達</text>
+        <text x="515" y="155" fill="#94a3b8" font-size="9" text-anchor="middle">全閉自然冷卻 IP65</text>
+        <text x="515" y="180" fill="#c084fc" font-size="9" text-anchor="middle">CN2 編碼器 24bit</text>
+        <text x="515" y="205" fill="#4ade80" font-size="9" text-anchor="middle">動力端 (U,V,W)</text>
+
+        <!-- Connections -->
+        <path d="M 120 70 L 200 70" stroke="#ef4444" stroke-width="2"/>
+        <path d="M 380 280 L 460 210" stroke="#22c55e" stroke-width="2"/>
+        <path d="M 380 220 L 460 180" stroke="#c084fc" stroke-width="1.5" stroke-dasharray="3 3"/>
+      `;
+    }
+    function setWiringMode(m) { renderWiring(m); }
+
+    // Part Number Configurator
+    function updateModelCode() {
+      const p = document.getElementById('m-power').value;
+      const c = document.getElementById('m-comm').value;
+      const v = document.getElementById('m-volt').value;
+      const d = document.getElementById('m-design').value;
+      document.getElementById('generated-code').innerText = 'SDC-' + p + c + v + d;
+    }
+    function copyModelCode() {
+      const code = document.getElementById('generated-code').innerText;
+      navigator.clipboard.writeText(code);
+      alert('已複製型號: ' + code);
+    }
+
+    // Populate Tables
+    function initDatabaseTables() {
+      const dtbody = document.getElementById('driver-tbody');
+      dtbody.innerHTML = '';
+      DRIVERS.forEach(d => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="mono" style="font-weight:700; color:#fff;">${d.modelCode}</td>
+          <td class="text-sky">${d.commType}</td>
+          <td class="mono text-emerald">${d.powerWatts} W</td>
+          <td class="mono">${d.ratedInputVoltage}</td>
+          <td class="mono">${d.outputCurrent} A</td>
+          <td class="mono">${d.dimensions.w}×${d.dimensions.h}×${d.dimensions.d} mm</td>
+          <td>${d.hasSTO ? '<span style="color:#10b981;">✓ 支援</span>' : '<span style="color:#64748b;">無</span>'}</td>
+          <td>${d.internalPositionPr ? '<span style="color:#10b981;">✓ 64段</span>' : '<span style="color:#64748b;">—</span>'}</td>
+        `;
+        dtbody.appendChild(tr);
+      });
+
+      const mtbody = document.getElementById('motor-tbody');
+      mtbody.innerHTML = '';
+      MOTORS.forEach(m => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="mono" style="font-weight:700; color:#fff;">${m.modelCode}</td>
+          <td>${m.inertiaType}</td>
+          <td class="mono text-emerald">${m.powerWatts} W</td>
+          <td class="mono">${m.ratedSpeedRpm} / ${m.maxSpeedRpm} rpm</td>
+          <td class="mono" style="color:#fff;">${m.ratedTorqueNm} Nm</td>
+          <td class="mono text-rose">${m.maxTorqueNm} Nm</td>
+          <td class="mono">${m.rotorInertiaJ} (${m.rotorInertiaWithBrakeJ})</td>
+          <td class="mono">□${m.flangeSizeMm} mm</td>
+          <td class="mono">${m.motorLengthMm} (${m.motorLengthWithBrakeMm}) mm</td>
+        `;
+        mtbody.appendChild(tr);
+      });
+
+      const atbody = document.getElementById('acc-tbody');
+      atbody.innerHTML = '';
+      ACCESSORIES.forEach(a => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td style="color:#38bdf8; font-weight:600;">${a.name}</td>
+          <td class="mono" style="font-weight:700; color:#fff;">${a.partNumber}</td>
+          <td class="mono">${a.voltageClass}</td>
+          <td>${a.description}</td>
+          <td style="color:#94a3b8;">${a.compatibleRange}</td>
+        `;
+        atbody.appendChild(tr);
+      });
+    }
+
+    // Init on load
+    window.addEventListener('DOMContentLoaded', () => {
+      renderPackages();
+      initDatabaseTables();
+      calcSizing();
+      renderWiring('Pt');
+      updateModelCode();
+    });
+  </script>
+</body>
+</html>
