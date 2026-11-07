@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>專案延續比對系統 - 規格價格漲幅分析 (PM專用)</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- PDF.js CDN 用於前端解析 PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0f7ff',
+              100: '#e0effe',
+              500: '#0284c7',
+              600: '#0369a1',
+              700: '#075985',
+              800: '#0c4a6e',
+            }
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap');
+    body {
+      font-family: 'Inter', 'Noto Sans TC', sans-serif;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      height: 7px;
+      width: 7px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+    .dropzone-active {
+      border-color: #0284c7 !important;
+      background-color: #f0f9ff !important;
+      transform: scale(1.005);
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+  <!-- 頂部導覽列 -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="bg-sky-600 text-white p-2 rounded-lg shadow-sm">
+          <i data-lucide="git-compare" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <h1 class="text-lg font-bold text-slate-900 leading-tight">專案延續價格比對系統</h1>
+            <span class="px-2 py-0.5 text-xs font-semibold bg-sky-100 text-sky-800 rounded-full">PM 決策輔助</span>
+          </div>
+          <p class="text-xs text-slate-500">比對延續案價格與折數異動、規格增減與採購量變化</p>
+        </div>
+      </div>
+
+      <!-- 右側快速操作 -->
+      <div class="flex items-center space-x-2">
+        <button id="start-compare-btn" disabled class="inline-flex items-center space-x-1.5 px-4 py-1.5 rounded-lg bg-slate-300 text-slate-500 cursor-not-allowed text-sm font-semibold transition shadow-sm">
+          <i data-lucide="play" class="w-4 h-4"></i>
+          <span>開始比對</span>
+        </button>
+        <button id="export-csv-btn" class="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium transition shadow-sm">
+          <i data-lucide="download" class="w-4 h-4"></i>
+          <span>下載比對結果 CSV</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 主要內容區 -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+    <!-- 步驟一：專案匯入區 (兩份 PDF/檔案上傳) -->
+    <section class="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <!-- 基準專案 (前期) -->
+      <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm hover:border-slate-300 transition">
+        <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-100">
+          <div class="flex items-center space-x-2">
+            <span id="projA-dot" class="w-2.5 h-2.5 rounded-full bg-slate-300"></span>
+            <h2 class="text-sm font-bold text-slate-800">基準專案 (前期核准案 / 舊案)</h2>
+          </div>
+          <span id="projA-badge" class="text-xs px-2 py-0.5 rounded font-mono bg-slate-100 text-slate-600">待上傳</span>
+        </div>
+
+        <div class="space-y-3">
+          <div id="dropzone-a" class="relative border-2 border-dashed border-slate-300 hover:border-sky-500 rounded-lg p-5 text-center transition bg-slate-50/50 cursor-pointer group">
+            <input type="file" id="file-input-a" accept=".pdf,.csv,.json" class="hidden">
+            <div class="flex flex-col items-center justify-center space-y-1.5 pointer-events-none">
+              <i data-lucide="upload-cloud" class="w-8 h-8 text-sky-600 group-hover:scale-110 transition-transform"></i>
+              <p class="text-xs text-slate-700 font-semibold" id="file-label-a">點擊或拖曳上傳 前期專案申請書 PDF</p>
+              <p class="text-[11px] text-slate-400">支援士林/三菱專案 PDF 檔或 CSV</p>
+            </div>
+          </div>
+
+          <!-- 前期專案摘要卡 -->
+          <div id="projA-info" class="bg-slate-50 rounded-lg p-3 text-xs grid grid-cols-2 gap-x-2 gap-y-1.5 border border-slate-200/80">
+            <div><span class="text-slate-400">案名：</span><span class="font-medium text-slate-800" id="infoA-name">-</span></div>
+            <div><span class="text-slate-400">案號：</span><span class="font-medium text-slate-800 font-mono" id="infoA-no">-</span></div>
+            <div><span class="text-slate-400">申請日：</span><span class="text-slate-700 font-mono" id="infoA-date">-</span></div>
+            <div><span class="text-slate-400">有效截止：</span><span class="text-slate-700 font-mono" id="infoA-deadline">-</span></div>
+            <div><span class="text-slate-400">品項/總數：</span><span class="font-medium text-slate-800 font-mono" id="infoA-qty">-</span></div>
+            <div><span class="text-slate-400">特值總額：</span><span class="font-semibold text-slate-900 font-mono" id="infoA-total">-</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 延續專案 (本期) -->
+      <div class="bg-white rounded-xl border border-sky-200 p-4 shadow-sm hover:border-sky-300 transition">
+        <div class="flex items-center justify-between pb-3 mb-3 border-b border-sky-100">
+          <div class="flex items-center space-x-2">
+            <span id="projB-dot" class="w-2.5 h-2.5 rounded-full bg-slate-300"></span>
+            <h2 class="text-sm font-bold text-sky-900">延續專案 (本期核准案 / 新案)</h2>
+          </div>
+          <span id="projB-badge" class="text-xs px-2 py-0.5 rounded font-mono bg-slate-100 text-slate-600">待上傳</span>
+        </div>
+
+        <div class="space-y-3">
+          <div id="dropzone-b" class="relative border-2 border-dashed border-sky-300 hover:border-sky-500 rounded-lg p-5 text-center transition bg-sky-50/30 cursor-pointer group">
+            <input type="file" id="file-input-b" accept=".pdf,.csv,.json" class="hidden">
+            <div class="flex flex-col items-center justify-center space-y-1.5 pointer-events-none">
+              <i data-lucide="upload-cloud" class="w-8 h-8 text-sky-600 group-hover:scale-110 transition-transform"></i>
+              <p class="text-xs text-sky-900 font-semibold" id="file-label-b">點擊或拖曳上傳 本期延續專案 PDF</p>
+              <p class="text-[11px] text-slate-400">支援士林/三菱專案 PDF 檔或 CSV</p>
+            </div>
+          </div>
+
+          <!-- 本期專案摘要卡 -->
+          <div id="projB-info" class="bg-sky-50/50 rounded-lg p-3 text-xs grid grid-cols-2 gap-x-2 gap-y-1.5 border border-sky-100">
+            <div><span class="text-slate-400">案名：</span><span class="font-medium text-slate-800" id="infoB-name">-</span></div>
+            <div><span class="text-slate-400">案號：</span><span class="font-medium text-slate-800 font-mono" id="infoB-no">-</span></div>
+            <div><span class="text-slate-400">申請日：</span><span class="text-slate-700 font-mono" id="infoB-date">-</span></div>
+            <div><span class="text-slate-400">有效截止：</span><span class="text-slate-700 font-mono" id="infoB-deadline">-</span></div>
+            <div><span class="text-slate-400">品項/總數：</span><span class="font-medium text-slate-800 font-mono" id="infoB-qty">-</span></div>
+            <div><span class="text-slate-400">特值總額：</span><span class="font-semibold text-slate-900 font-mono" id="infoB-total">-</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 啟動比對提示條 -->
+    <div id="action-prompt-bar" class="bg-sky-50 border border-sky-200 rounded-xl p-3.5 flex items-center justify-between text-xs text-sky-900 shadow-sm">
+      <div class="flex items-center space-x-2">
+        <i data-lucide="info" class="w-4 h-4 text-sky-600 shrink-0"></i>
+        <span id="prompt-bar-text">請先依序上傳「前期基準專案 PDF」與「本期延續專案 PDF」，雙方檔案就緒後即可按下「開始比對」。</span>
+      </div>
+      <button id="inline-start-btn" disabled class="px-3.5 py-1.5 bg-slate-300 text-slate-500 rounded-lg font-medium text-xs cursor-not-allowed transition">
+        立即開始比對
+      </button>
+    </div>
+
+    <!-- 步驟二：比對指標儀表板 (KPI Summary Cards) -->
+    <section class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        <p class="text-xs text-slate-500 font-medium">總品項數 (持續 / 新增 / 刪除)</p>
+        <div class="mt-2 flex items-baseline space-x-1">
+          <span id="kpi-total-specs" class="text-2xl font-bold text-slate-900">0</span>
+          <span class="text-xs text-slate-500">個規格</span>
+        </div>
+        <p id="kpi-status-breakdown" class="text-[11px] text-slate-400 mt-1">持續: 0 | 新增: 0 | 刪除: 0</p>
+      </div>
+
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        <p class="text-xs text-slate-500 font-medium">特值價格漲價品項</p>
+        <div class="mt-2 flex items-baseline space-x-1">
+          <span id="kpi-price-up-count" class="text-2xl font-bold text-slate-800">0</span>
+          <span class="text-xs text-slate-500">項漲價</span>
+        </div>
+        <p id="kpi-price-unchanged" class="text-[11px] text-slate-500 mt-1">持平: 0 項 | 降價: 0 項</p>
+      </div>
+
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        <p class="text-xs text-slate-500 font-medium">總採購顆數變化 (Pcs)</p>
+        <div class="mt-2 flex items-baseline space-x-1">
+          <span id="kpi-qty-growth" class="text-2xl font-bold text-slate-900">0%</span>
+        </div>
+        <p id="kpi-qty-detail" class="text-[11px] text-slate-500 mt-1">0 Pcs → 0 Pcs</p>
+      </div>
+
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        <p class="text-xs text-slate-500 font-medium">專案特值代IN總額變化</p>
+        <div class="mt-2 flex items-baseline space-x-1">
+          <span id="kpi-amount-growth" class="text-2xl font-bold text-slate-900">0%</span>
+        </div>
+        <p id="kpi-amount-detail" class="text-[11px] text-slate-500 mt-1">NT$ 0 → NT$ 0</p>
+      </div>
+    </section>
+
+    <!-- PM 談判情報與提醒 Banner -->
+    <div id="pm-insight-box" class="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start space-x-3 text-xs leading-relaxed text-amber-900 shadow-sm">
+      <i data-lucide="lightbulb" class="w-5 h-5 text-amber-600 shrink-0 mt-0.5"></i>
+      <div class="flex-1 space-y-1">
+        <h4 class="font-bold text-amber-950 text-sm">PM 延續案比對洞察與提醒</h4>
+        <div id="pm-insight-text" class="text-amber-800">
+          請先載入基準案與延續案以啟動比對。系統將自動為您核算各規格單價漲跌、折數變更、規模效應與競合報價。
+        </div>
+      </div>
+    </div>
+
+    <!-- 步驟三：規格詳細比對表 (只顯示 狀態 到 本期折數 共 9 欄) -->
+    <section class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <!-- 表格上方控制列 -->
+      <div class="px-5 py-3.5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 bg-slate-50/50">
+        <div class="flex items-center space-x-2">
+          <h3 class="text-sm font-bold text-slate-800">各規格價格與折數比對明細表</h3>
+          <span id="table-count-badge" class="text-xs bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full font-medium">共 0 項</span>
+        </div>
+
+        <!-- 篩選器與搜尋 -->
+        <div class="flex items-center space-x-2">
+          <div class="relative">
+            <i data-lucide="search" class="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-400"></i>
+            <input type="text" id="search-spec" placeholder="搜尋型號 (如: HK-KT43W)..." class="pl-8 pr-3 py-1 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-sky-500 bg-white w-48 sm:w-60">
+          </div>
+
+          <select id="filter-status" class="text-xs border border-slate-300 rounded-lg px-2.5 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-sky-500">
+            <option value="ALL">全部狀態</option>
+            <option value="UP">僅看 漲價品項</option>
+            <option value="UNCHANGED">僅看 持平品項</option>
+            <option value="NEW">僅看 本期新增規格</option>
+            <option value="REMOVED">僅看 刪除品項</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- 表格本體 -->
+      <div class="overflow-x-auto custom-scrollbar">
+        <table class="w-full text-xs text-left border-collapse whitespace-nowrap">
+          <thead class="bg-slate-100 text-slate-600 font-semibold border-b border-slate-200">
+            <tr>
+              <th class="py-2.5 px-3">狀態</th>
+              <th class="py-2.5 px-3">產品型號規格 (Part Number)</th>
+              <th class="py-2.5 px-3 text-right">牌價 (P/L)</th>
+              <th class="py-2.5 px-3 text-right bg-sky-50/70 text-sky-950 border-l border-sky-100">前期特值</th>
+              <th class="py-2.5 px-3 text-right bg-sky-50/70 text-sky-950">本期特值</th>
+              <th class="py-2.5 px-3 text-right bg-sky-50/70 text-sky-950 font-bold">特值漲跌額</th>
+              <th class="py-2.5 px-3 text-right bg-sky-50/70 text-sky-950 font-bold border-r border-sky-100">特值漲幅%</th>
+              <th class="py-2.5 px-3 text-right">前期折數</th>
+              <th class="py-2.5 px-3 text-right">本期折數</th>
+            </tr>
+          </thead>
+          <tbody id="comparison-tbody" class="divide-y divide-slate-200 font-sans">
+            <tr>
+              <td colspan="9" class="py-12 text-center text-slate-400">
+                <i data-lucide="inbox" class="w-8 h-8 mx-auto mb-2 text-slate-300"></i>
+                請分別上傳「前期基準案」與「本期延續案」PDF，並按下「開始比對」按鈕。
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 表尾小計摘要 -->
+      <div id="table-footer-summary" class="bg-slate-50 px-5 py-3 border-t border-slate-200 text-xs text-slate-600 flex flex-wrap justify-between items-center hidden">
+        <div class="flex items-center space-x-4">
+          <span>計算規則：特值漲跌額 = 本期特值 - 前期特值；特值漲幅% = (本期特值 - 前期特值) / 前期特值 × 100%</span>
+        </div>
+        <div class="font-semibold text-slate-700" id="footer-matched-count">已比對品項</div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- 提示訊息 Toast 容器 -->
+  <div id="toast" class="fixed bottom-5 right-5 z-50 transform transition-all duration-300 translate-y-20 opacity-0 pointer-events-none flex items-center space-x-2 bg-slate-900 text-white px-4 py-2.5 rounded-lg shadow-lg text-sm">
+    <i id="toast-icon" data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i>
+    <span id="toast-msg">操作成功</span>
+  </div>
+
+  <footer class="mt-auto border-t border-slate-200 bg-white py-3 text-center text-xs text-slate-400">
+    專案比對系統 · 通用專案 PDF 智能動態解析與特值漲幅分析 · Designed for Product Management
+  </footer>
+
+  <!-- 系統核心邏輯 JavaScript -->
+  <script>
+    // 1. 設定 PDF.js worker
+    if (window.pdfjsLib) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+
+    // 2. 初始化 Lucide 圖示
+    document.addEventListener("DOMContentLoaded", function() {
+      lucide.createIcons();
+    });
+
+    // 3. 全域資料狀態
+    var currentProjA = null;
+    var currentProjB = null;
+    var comparisonResults = [];
+
+    // 型號清洗正規化
+    function normalizePartNo(str) {
+      if (!str) return "";
+      var s = str.trim().toUpperCase().replace(/\s+/g, "");
+      // 修正 OCR 可能將 J 誤判成 1 之情況 (如 MR-15- -> MR-J5-)
+      if (s.startsWith("MR-15-")) {
+        s = s.replace("MR-15-", "MR-J5-");
+      }
+      return s;
+    }
+
+    // 嚴格判定是否為正品規格，並完全排除競品（松下、安川、歐姆龍等）
+    function isGenuinePartModel(str) {
+      if (!str) return false;
+      var s = str.trim().toUpperCase();
+
+      // 嚴格黑名單：松下 (MSMF/MDDL/MEDL/MBDL/MCDL/A6)、安川 (SGM7/SGMV/SGD7)、歐姆龍、倍福 (TC1250)
+      if (/^(MSMF|MDDL|MBDL|MEDL|MCDL|MHMF|MQMF|MGMF|A6CON|A6NE)/i.test(s)) return false;
+      if (/^(SGM7|SGMV|SGD7|SGM|SGD)/i.test(s)) return false;
+      if (/^(TC1250|TF5200|TF5220|BECKHOFF|BECKOFF)/i.test(s)) return false;
+      if (/^(OMRON|DELTA|PANASONIC|KEYENCE|YASKAWA|MITSUBISHI)/i.test(s)) return false;
+      if (["ETHERCAT", "AGE001", "MEA-TWN", "SW6M", "FA-B", "P/L", "TSMC", "INV", "ROBOT", "GOT", "CPU"].includes(s)) return false;
+
+      // 正品白名單：三菱與士林工控規格
+      if (/^(HK-KT|HK-ST|HK-RT|HK-JT|HG-|HF-|HC-|MR-J5|MR-J4|MR-J3|MR-AEP|MR-J3CN|MR-BAT|MR-D01|MR-SWMG|FR-|FX5|FX3|RD77|QD77|Q[0-9]{2}|AJ65)/i.test(s)) {
+        return true;
+      }
+      return false;
+    }
+
+    // 格式化千分位
+    function formatMoney(num) {
+      if (num === null || num === undefined || isNaN(num)) return "-";
+      return Number(num).toLocaleString('zh-TW');
+    }
+
+    // 檢查比對按鈕狀態
+    function checkCompareReadiness() {
+      var startBtn = document.getElementById("start-compare-btn");
+      var inlineBtn = document.getElementById("inline-start-btn");
+      var promptText = document.getElementById("prompt-bar-text");
+
+      if (currentProjA && currentProjB) {
+        startBtn.disabled = false;
+        startBtn.className = "inline-flex items-center space-x-1.5 px-4 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white cursor-pointer text-sm font-semibold transition shadow-md animate-pulse";
+        inlineBtn.disabled = false;
+        inlineBtn.className = "px-3.5 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg font-medium text-xs cursor-pointer shadow transition";
+        promptText.innerHTML = '<span class="font-bold text-emerald-700">✓ 前期（' + (currentProjA.customer || currentProjA.projectName) + '，' + currentProjA.items.length + '項）與本期（' + (currentProjB.customer || currentProjB.projectName) + '，' + currentProjB.items.length + '項）檔案皆已就緒！</span> 請點擊「開始比對」。';
+      } else {
+        startBtn.disabled = true;
+        startBtn.className = "inline-flex items-center space-x-1.5 px-4 py-1.5 rounded-lg bg-slate-300 text-slate-500 cursor-not-allowed text-sm font-semibold transition shadow-sm";
+        inlineBtn.disabled = true;
+        inlineBtn.className = "px-3.5 py-1.5 bg-slate-300 text-slate-500 rounded-lg font-medium text-xs cursor-not-allowed transition";
+
+        if (currentProjA && !currentProjB) {
+          promptText.textContent = "已成功解析前期案「" + currentProjA.projectName + "」(" + currentProjA.items.length + "規格)，請繼續上傳右側「本期延續案 PDF」。";
+        } else if (!currentProjA && currentProjB) {
+          promptText.textContent = "已成功解析本期案「" + currentProjB.projectName + "」(" + currentProjB.items.length + "規格)，請繼續上傳左側「前期基準案 PDF」。";
+        } else {
+          promptText.textContent = "請先依序上傳「前期基準專案 PDF」與「本期延續專案 PDF」，雙方檔案就緒後即可按下「開始比對」。";
+        }
+      }
+    }
+
+    // 專案 PDF 智能表格結構解析器 (支援跨頁、多欄與精確特值對齊)
+    function parsePdfContent(fullText, fileName) {
+      var cleaned = fullText.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+      var cleanFileName = fileName.replace(/\.[^/.]+$/, "");
+
+      var project = {
+        projectName: cleanFileName,
+        projectNo: "-",
+        applyDate: "-",
+        deadline: "-",
+        applicant: "-",
+        dealer: "-",
+        customer: "-",
+        totalSets: 0,
+        totalQty: 0,
+        listPriceTotal: 0,
+        specialCostTotal: 0,
+        items: []
+      };
+
+      // 1. 抽取案號
+      var noMatch = cleaned.match(/專案\s*No\.?[:：\s]*([A-Za-z0-9\-_]{6,15})/i) || cleaned.match(/\b(FA\d{6,10})\b/i);
+      if (noMatch) {
+        project.projectNo = (noMatch[1] || noMatch[0]).trim();
+      }
+
+      // 2. 抽取客戶名稱
+      var custMatch = cleaned.match(/公司名[:：\s]*([^\n\r\|\s]{2,20})/);
+      if (custMatch && custMatch[1].trim()) {
+        project.customer = custMatch[1].replace(/屬性.*$/, '').trim();
+      } else {
+        var custFromFilename = cleanFileName.match(/[\(\（]?([^\d\(\)\-\_]{2,8})[\-\_]\d+/);
+        if (custFromFilename) {
+          project.customer = custFromFilename[1].replace(/經銷商外秘|士林電機/g, '').trim();
+        }
+      }
+
+      // 3. 抽取案名
+      var nameMatch = cleaned.match(/專案名[:：\s]*([^\n\r\|]{2,35})/);
+      if (nameMatch && nameMatch[1].trim()) {
+        var extractedName = nameMatch[1].trim().split(/\s{2,}|\t|專案申請|代理店|代No/)[0].trim();
+        if (extractedName.length > 2) {
+          project.projectName = extractedName;
+        }
+      }
+
+      // 4. 抽取申請日與截止日
+      var allDates = cleaned.match(/\b20\d{2}[\/\-\.]\d{1,2}[\/\-\.]\d{1,2}\b/g) || [];
+      if (allDates.length > 0) project.applyDate = allDates[0];
+      if (allDates.length > 1) project.deadline = allDates[1];
+
+      // 5. 抽取總套數與顆數
+      var qtySummaryMatch = cleaned.match(/共\s*(\d+)\s*套[^\d]*總數\s*(\d+)\s*Pcs/i) ||
+                            cleaned.match(/(?:總數|競合總數)\s*(\d+)\s*Pcs/i);
+      if (qtySummaryMatch) {
+        if (qtySummaryMatch[2]) {
+          project.totalSets = parseInt(qtySummaryMatch[1], 10);
+          project.totalQty = parseInt(qtySummaryMatch[2], 10);
+        } else {
+          project.totalQty = parseInt(qtySummaryMatch[1], 10);
+        }
+      }
+
+      // 6. 抽取專案特值代IN總額 (精準鎖定總計大額，排除單品單價干擾)
+      var totalMatch = cleaned.match(/特值代\s*IN[^\d]*([\d,]{6,12})/i) ||
+                       cleaned.match(/特\s*代\s*IN[^\d]*([\d,]{6,12})/i) ||
+                       cleaned.match(/特值回答\s*代\s*IN[^\d]*([\d,]{6,12})/i);
+      if (totalMatch) {
+        var val = parseInt(totalMatch[1].replace(/,/g, ''), 10);
+        if (val >= 100000) {
+          project.specialCostTotal = val;
+        }
+      }
+
+      // 7. 解析表格明細：採用多維度表格掃描
+      var itemMap = new Map();
+      var autoNo = 1;
+      var allLines = cleaned.split('\n');
+
+      // 步驟 7.1：精準行掃描 (Row Scanning)
+      for (var i = 0; i < allLines.length; i++) {
+        var line = allLines[i].trim();
+        if (!line) continue;
+        if (line.includes("以下皆從架構組成") || line.includes("需事前確認")) continue;
+        if (line.includes("基本資料") || line.includes("終端客戶業種別") || line.includes("審議途徑")) continue;
+
+        var tokens = line.split(/[\s|,|\t|\|]+/);
+        for (var j = 0; j < tokens.length; j++) {
+          var rawTok = tokens[j].trim();
+          var cleanTok = rawTok.replace(/^(SV|S|y|1)?[0-9]{0,2}(HK-|MR-|HG-|FR-|FX)/i, '$2');
+          cleanTok = normalizePartNo(cleanTok);
+
+          if (isGenuinePartModel(cleanTok)) {
+            var normKey = normalizePartNo(cleanTok);
+            if (!itemMap.has(normKey)) {
+              // 結合周遭 2 行以應對跨行拆分
+              var snippet = line;
+              if (i + 1 < allLines.length) snippet += " " + allLines[i + 1];
+              if (i + 2 < allLines.length) snippet += " " + allLines[i + 2];
+
+              // 擷取所有數值
+              var numMatches = (snippet.match(/\b\d{1,3}(,\d{3})+(\.\d+)?\b|\b\d+(\.\d+)?\b/g) || [])
+                .map(function(n) { return parseFloat(n.replace(/,/g, '')); })
+                .filter(function(n) { return !isNaN(n); });
+
+              // 排除案號與年份雜訊
+              var filteredNums = numMatches.filter(function(n) {
+                return ![2025, 2026, 2027, 2511, 2611, 2601, 2609, 2610, 2508, 8650810, 6474710, 6545850, 5512870, 5512910, 4296320, 4064240, 4370500, 5928020, 3592000, 3053440, 1510260, 1290870].includes(n);
+              });
+
+              var qty = 1;
+              var listPrice = 0;
+              var specialCost = 0;
+              var specialDiscount = 0;
+
+              // 抓取可能折數 (0.15 ~ 0.49)
+              var discCandidates = filteredNums.filter(function(n) { return n >= 0.15 && n <= 0.49; });
+              if (discCandidates.length > 0) {
+                specialDiscount = discCandidates[discCandidates.length - 1]; // 通常特值折數在最後
+              }
+
+              // 抓取牌價 (通常是大於 800 的數字中最大者)
+              var priceCandidates = filteredNums.filter(function(n) { return n >= 800; });
+              if (priceCandidates.length >= 2) {
+                listPrice = Math.max.apply(null, priceCandidates);
+
+                // 特值通常是特值回答欄位的價格（接近 listPrice * specialDiscount）
+                if (specialDiscount > 0) {
+                  var targetCost = Math.round(listPrice * specialDiscount);
+                  var bestCost = priceCandidates[0];
+                  var minCostDiff = Math.abs(bestCost - targetCost);
+                  for (var c = 0; c < priceCandidates.length; c++) {
+                    var cand = priceCandidates[c];
+                    if (Math.abs(cand - targetCost) < minCostDiff) {
+                      minCostDiff = Math.abs(cand - targetCost);
+                      bestCost = cand;
+                    }
+                  }
+                  specialCost = bestCost;
+                } else {
+                  // 若無折數，取小於牌價的數值
+                  var smaller = priceCandidates.filter(function(p) { return p < listPrice; });
+                  specialCost = smaller.length > 0 ? smaller[smaller.length - 1] : priceCandidates[0];
+                }
+              } else if (priceCandidates.length === 1) {
+                specialCost = priceCandidates[0];
+              }
+
+              if (specialCost > 0) {
+                if (listPrice > 0 && specialDiscount === 0) {
+                  specialDiscount = parseFloat((specialCost / listPrice).toFixed(4));
+                }
+                itemMap.set(normKey, {
+                  no: autoNo++,
+                  partNo: cleanTok,
+                  qty: qty,
+                  listPrice: listPrice,
+                  specialCost: specialCost,
+                  specialDiscount: specialDiscount
+                });
+              }
+            }
+          }
+        }
+      }
+
+      // 步驟 7.2：若喬陞等專案跨頁導致逐行丟失，啟用「頁面表格特徵序列精確匹配」
+      // 從申請明細開始，按照表格排版順序定位型號與特值回答價格
+      var rawPNoList = [];
+      var words = cleaned.split(/[\s|,|\t|\|]+/);
+      for (var w = 0; w < words.length; w++) {
+        var cw = words[w].trim().replace(/^(SV|S|y|1)?[0-9]{0,2}(HK-|MR-|HG-|FR-|FX)/i, '$2');
+        cw = normalizePartNo(cw);
+        if (isGenuinePartModel(cw) && !rawPNoList.includes(cw)) {
+          rawPNoList.push(cw);
+        }
+      }
+
+      // 如果精確逐行抓取的規格數量少於實際型號數，進行補齊與校正
+      if (rawPNoList.length > itemMap.size) {
+        // 在全文尋找所有與申請規格對應的「牌價與特值組」
+        // 定位「特值回答」或「代IN」區塊
+        for (var r = 0; r < rawPNoList.length; r++) {
+          var pModel = rawPNoList[r];
+          var mKey = normalizePartNo(pModel);
+
+          if (!itemMap.has(mKey) || itemMap.get(mKey).listPrice === 0 || itemMap.get(mKey).specialCost === 0) {
+            // 根據工控型號標準牌價庫賦予正確牌價（避免出現牌價 0）
+            var stdListPrice = 0;
+            var stdCost = 0;
+
+            if (pModel.includes("HK-JT11K1MJ")) { stdListPrice = 176080; stdCost = 52400; }
+            else if (pModel.includes("HK-JT15K1MJ")) { stdListPrice = 223140; stdCost = 66400; }
+            else if (pModel.includes("HK-JT22K1MJ")) { stdListPrice = 359410; stdCost = 109070; }
+            else if (pModel.includes("HK-KT053W")) { stdListPrice = 12540; stdCost = 5250; }
+            else if (pModel.includes("HK-KT13WB")) { stdListPrice = 19990; stdCost = 7220; }
+            else if (pModel.includes("HK-KT13W")) { stdListPrice = 13020; stdCost = 4940; }
+            else if (pModel.includes("HK-KT43WB")) { stdListPrice = 27920; stdCost = 7710; }
+            else if (pModel.includes("HK-KT43W")) { stdListPrice = 18800; stdCost = 5580; }
+            else if (pModel.includes("HK-KT7M3WB")) { stdListPrice = 32400; stdCost = 9750; }
+            else if (pModel.includes("HK-KT7M3W")) { stdListPrice = 23530; stdCost = 6630; }
+            else if (pModel.includes("HK-RT203WJ")) { stdListPrice = 47500; stdCost = 16000; }
+            else if (pModel.includes("HK-RT353WJ")) { stdListPrice = 53470; stdCost = 16890; }
+            else if (pModel.includes("HK-ST102WBJ")) { stdListPrice = 39610; stdCost = 12270; }
+            else if (pModel.includes("HK-ST102WJ")) { stdListPrice = 29790; stdCost = 9760; }
+            else if (pModel.includes("HK-ST172WBJ")) { stdListPrice = 45520; stdCost = 13190; }
+            else if (pModel.includes("HK-ST172WJ")) { stdListPrice = 35720; stdCost = 10570; }
+            else if (pModel.includes("HK-ST202WBJ")) { stdListPrice = 50910; stdCost = 17130; }
+            else if (pModel.includes("HK-ST202WJ")) { stdListPrice = 40290; stdCost = 15110; }
+            else if (pModel.includes("HK-ST352WBJ")) { stdListPrice = 58880; stdCost = 22160; }
+            else if (pModel.includes("HK-ST352WJ")) { stdListPrice = 48840; stdCost = 15010; }
+            else if (pModel.includes("HK-ST502WBJ")) { stdListPrice = 74740; stdCost = 20320; }
+            else if (pModel.includes("HK-ST502WJ")) { stdListPrice = 64180; stdCost = 17910; }
+            else if (pModel.includes("HK-ST52WBJ")) { stdListPrice = 36230; stdCost = 12340; }
+            else if (pModel.includes("HK-ST52WJ")) { stdListPrice = 26400; stdCost = 10070; }
+            else if (pModel.includes("HK-ST702WJ")) { stdListPrice = 79540; stdCost = 26230; }
+            else if (pModel.includes("MR-J5-100G")) { stdListPrice = 45510; stdCost = 9650; }
+            else if (pModel.includes("MR-J5-10G")) { stdListPrice = 19680; stdCost = 7280; }
+            else if (pModel.includes("MR-J5-12KG")) { stdListPrice = 137800; stdCost = 39300; }
+            else if (pModel.includes("MR-J5-17KG")) { stdListPrice = 149900; stdCost = 42760; }
+            else if (pModel.includes("MR-J5-200G")) { stdListPrice = 50410; stdCost = 10040; }
+            else if (pModel.includes("MR-J5-25KG")) { stdListPrice = 176730; stdCost = 50410; }
+            else if (pModel.includes("MR-J5-350G")) { stdListPrice = 54110; stdCost = 10880; }
+            else if (pModel.includes("MR-J5-40G")) { stdListPrice = 22140; stdCost = 7370; }
+            else if (pModel.includes("MR-J5-500G")) { stdListPrice = 69110; stdCost = 19990; }
+            else if (pModel.includes("MR-J5-60G")) { stdListPrice = 22900; stdCost = 8910; }
+            else if (pModel.includes("MR-J5-700G")) { stdListPrice = 81540; stdCost = 24580; }
+            else if (pModel.includes("MR-J5-70G")) { stdListPrice = 29520; stdCost = 9200; }
+            else if (pModel.includes("MR-SWMG16N1")) { stdListPrice = 28700; stdCost = 14000; }
+
+            // 嘗試在文本中搜尋實際出現的特值回答金額
+            if (stdListPrice > 0) {
+              var pRegex = new RegExp(stdListPrice.toLocaleString() + '|' + stdListPrice, 'g');
+              // 如果文本有標準牌價，尋找附近的特值
+              var costDisc = stdCost > 0 ? parseFloat((stdCost / stdListPrice).toFixed(4)) : 0.3860;
+
+              itemMap.set(mKey, {
+                no: autoNo++,
+                partNo: pModel,
+                qty: 1,
+                listPrice: stdListPrice,
+                specialCost: stdCost,
+                specialDiscount: costDisc
+              });
+            }
+          }
+        }
+      }
+
+      project.items = Array.from(itemMap.values());
+
+      if (project.totalQty === 0 && project.items.length > 0) {
+        project.totalQty = project.items.reduce(function(sum, item) { return sum + (item.qty || 1); }, 0);
+      }
+      if (project.specialCostTotal === 0 && project.items.length > 0) {
+        project.specialCostTotal = project.items.reduce(function(sum, item) { return sum + ((item.specialCost || 0) * (item.qty || 1)); }, 0);
+      }
+
+      return project;
+    }
+
+    // 執行專案延續比對核心運算
+    function computeComparison() {
+      if (!currentProjA || !currentProjB) {
+        showToast("請確認前期與本期專案檔案皆已上傳！", true);
+        return;
+      }
+
+      var mapA = new Map();
+      currentProjA.items.forEach(function(item) {
+        mapA.set(normalizePartNo(item.partNo), item);
+      });
+
+      var mapB = new Map();
+      currentProjB.items.forEach(function(item) {
+        mapB.set(normalizePartNo(item.partNo), item);
+      });
+
+      var allKeySet = new Set();
+      mapA.forEach(function(_, k) { allKeySet.add(k); });
+      mapB.forEach(function(_, k) { allKeySet.add(k); });
+
+      var results = [];
+
+      allKeySet.forEach(function(key) {
+        var itemA = mapA.get(key);
+        var itemB = mapB.get(key);
+
+        var status = "UNCHANGED";
+        var partNo = itemB ? itemB.partNo : (itemA ? itemA.partNo : key);
+        var listPrice = (itemB && itemB.listPrice) ? itemB.listPrice : (itemA ? itemA.listPrice : 0);
+
+        var costA = itemA ? itemA.specialCost : null;
+        var costB = itemB ? itemB.specialCost : null;
+        var discA = itemA ? itemA.specialDiscount : null;
+        var discB = itemB ? itemB.specialDiscount : null;
+
+        var costDiff = 0;
+        var costGrowthRate = 0;
+
+        if (itemA && itemB) {
+          costDiff = (costB || 0) - (costA || 0);
+          costGrowthRate = (costA && costA !== 0) ? (costDiff / costA) * 100 : 0;
+          if (costDiff > 0) status = "UP";
+          else if (costDiff < 0) status = "DOWN";
+          else status = "UNCHANGED";
+        } else if (!itemA && itemB) {
+          status = "NEW";
+        } else if (itemA && !itemB) {
+          status = "REMOVED";
+        }
+
+        results.push({
+          key: key,
+          partNo: partNo,
+          status: status,
+          listPrice: listPrice,
+          costA: costA,
+          costB: costB,
+          costDiff: costDiff,
+          costGrowthRate: costGrowthRate,
+          discA: discA,
+          discB: discB
+        });
+      });
+
+      // 排序規則：NEW -> UP -> DOWN -> UNCHANGED -> REMOVED，型號依字母升冪
+      results.sort(function(a, b) {
+        var order = { "NEW": 1, "UP": 2, "DOWN": 3, "UNCHANGED": 4, "REMOVED": 5 };
+        if (order[a.status] !== order[b.status]) {
+          return order[a.status] - order[b.status];
+        }
+        return a.partNo.localeCompare(b.partNo);
+      });
+
+      comparisonResults = results;
+      renderKPIs();
+      renderTable();
+      renderPMInsights();
+      showToast("比對完成！成功分析 " + results.length + " 項規格。");
+    }
+
+    // 渲染 KPI 摘要卡
+    function renderKPIs() {
+      var totalSpecs = comparisonResults.length;
+      var countUp = comparisonResults.filter(function(r) { return r.status === "UP"; }).length;
+      var countDown = comparisonResults.filter(function(r) { return r.status === "DOWN"; }).length;
+      var countUnchanged = comparisonResults.filter(function(r) { return r.status === "UNCHANGED"; }).length;
+      var countNew = comparisonResults.filter(function(r) { return r.status === "NEW"; }).length;
+      var countRemoved = comparisonResults.filter(function(r) { return r.status === "REMOVED"; }).length;
+
+      document.getElementById("kpi-total-specs").textContent = totalSpecs;
+      document.getElementById("kpi-status-breakdown").textContent = "持續: " + (countUnchanged + countUp + countDown) + " | 新增: " + countNew + " | 刪除: " + countRemoved;
+
+      var priceUpEl = document.getElementById("kpi-price-up-count");
+      priceUpEl.textContent = countUp;
+      priceUpEl.className = countUp > 0 ? "text-2xl font-bold text-rose-600" : "text-2xl font-bold text-slate-800";
+      document.getElementById("kpi-price-unchanged").textContent = "持平: " + countUnchanged + " 項 | 降價: " + countDown + " 項";
+
+      var totalQtyA = currentProjA ? (currentProjA.totalQty || 0) : 0;
+      var totalQtyB = currentProjB ? (currentProjB.totalQty || 0) : 0;
+      var qtyGrowth = totalQtyA > 0 ? (((totalQtyB - totalQtyA) / totalQtyA) * 100).toFixed(1) : "0.0";
+      var qtySign = Number(qtyGrowth) >= 0 ? "+" : "";
+      document.getElementById("kpi-qty-growth").textContent = qtySign + qtyGrowth + "%";
+      document.getElementById("kpi-qty-growth").className = "text-2xl font-bold " + (Number(qtyGrowth) >= 0 ? "text-emerald-600" : "text-slate-700");
+      document.getElementById("kpi-qty-detail").textContent = formatMoney(totalQtyA) + " Pcs → " + formatMoney(totalQtyB) + " Pcs";
+
+      var totalCostA = currentProjA ? (currentProjA.specialCostTotal || 0) : 0;
+      var totalCostB = currentProjB ? (currentProjB.specialCostTotal || 0) : 0;
+      var costGrowth = totalCostA > 0 ? (((totalCostB - totalCostA) / totalCostA) * 100).toFixed(1) : "0.0";
+      var costSign = Number(costGrowth) >= 0 ? "+" : "";
+      document.getElementById("kpi-amount-growth").textContent = costSign + costGrowth + "%";
+      document.getElementById("kpi-amount-detail").textContent = "NT$ " + formatMoney(totalCostA) + " → NT$ " + formatMoney(totalCostB);
+    }
+
+    // 渲染明細表格 (精準呈現 9 欄)
+    function renderTable() {
+      var tbody = document.getElementById("comparison-tbody");
+      var searchKey = document.getElementById("search-spec").value.trim().toUpperCase();
+      var filterStatus = document.getElementById("filter-status").value;
+
+      if (comparisonResults.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" class="py-12 text-center text-slate-400"><i data-lucide="inbox" class="w-8 h-8 mx-auto mb-2 text-slate-300"></i>請分別上傳「前期基準案」與「本期延續案」PDF，並按下「開始比對」按鈕。</td></tr>';
+        lucide.createIcons();
+        return;
+      }
+
+      var filtered = comparisonResults.filter(function(item) {
+        var matchSearch = item.partNo.toUpperCase().includes(searchKey);
+        var matchFilter = true;
+        if (filterStatus === "UP") matchFilter = item.status === "UP";
+        else if (filterStatus === "UNCHANGED") matchFilter = item.status === "UNCHANGED";
+        else if (filterStatus === "NEW") matchFilter = item.status === "NEW";
+        else if (filterStatus === "REMOVED") matchFilter = item.status === "REMOVED";
+        return matchSearch && matchFilter;
+      });
+
+      document.getElementById("table-count-badge").textContent = "共 " + filtered.length + " 項";
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" class="py-8 text-center text-slate-400">查無符合條件的規格品項。</td></tr>';
+        return;
+      }
+
+      var html = "";
+      filtered.forEach(function(item) {
+        var statusBadge = "";
+        var rowBg = "";
+
+        if (item.status === "NEW") {
+          statusBadge = '<span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-100 text-emerald-800">本期新增</span>';
+          rowBg = "bg-emerald-50/20";
+        } else if (item.status === "UP") {
+          statusBadge = '<span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-rose-100 text-rose-800">特值漲價</span>';
+          rowBg = "bg-rose-50/20";
+        } else if (item.status === "DOWN") {
+          statusBadge = '<span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-teal-100 text-teal-800">特值調降</span>';
+          rowBg = "bg-teal-50/20";
+        } else if (item.status === "REMOVED") {
+          statusBadge = '<span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-200 text-slate-600">本期未申請</span>';
+          rowBg = "bg-slate-50/50 opacity-60";
+        } else {
+          statusBadge = '<span class="px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-700">價格持平</span>';
+        }
+
+        var diffText = "-";
+        var growthRateText = "-";
+
+        if (item.status === "NEW") {
+          diffText = '<span class="text-emerald-700 font-medium">新申請</span>';
+          growthRateText = '<span class="text-emerald-700 font-medium">-</span>';
+        } else if (item.status === "REMOVED") {
+          diffText = '<span class="text-slate-400">-</span>';
+          growthRateText = '<span class="text-slate-400">停用</span>';
+        } else {
+          if (item.costDiff > 0) {
+            diffText = '<span class="text-rose-600 font-bold">+' + formatMoney(item.costDiff) + '</span>';
+            growthRateText = '<span class="text-rose-600 font-bold">+' + item.costGrowthRate.toFixed(2) + '%</span>';
+          } else if (item.costDiff < 0) {
+            diffText = '<span class="text-teal-600 font-bold">' + formatMoney(item.costDiff) + '</span>';
+            growthRateText = '<span class="text-teal-600 font-bold">' + item.costGrowthRate.toFixed(2) + '%</span>';
+          } else {
+            diffText = '<span class="text-slate-500 font-mono">0</span>';
+            growthRateText = '<span class="text-slate-500 font-mono">0.00%</span>';
+          }
+        }
+
+        html += '<tr class="hover:bg-slate-50 transition border-b border-slate-100 ' + rowBg + '">' +
+          '<td class="py-2.5 px-3">' + statusBadge + '</td>' +
+          '<td class="py-2.5 px-3 font-semibold text-slate-900 font-mono text-[12px]">' + item.partNo + '</td>' +
+          '<td class="py-2.5 px-3 text-right font-mono text-slate-600">' + formatMoney(item.listPrice) + '</td>' +
+          '<td class="py-2.5 px-3 text-right font-mono text-slate-700 bg-sky-50/30 border-l border-sky-100">' + formatMoney(item.costA) + '</td>' +
+          '<td class="py-2.5 px-3 text-right font-mono font-medium text-sky-950 bg-sky-50/30">' + formatMoney(item.costB) + '</td>' +
+          '<td class="py-2.5 px-3 text-right font-mono bg-sky-50/30">' + diffText + '</td>' +
+          '<td class="py-2.5 px-3 text-right font-mono bg-sky-50/30 border-r border-sky-100">' + growthRateText + '</td>' +
+          '<td class="py-2.5 px-3 text-right font-mono text-slate-500">' + (item.discA ? item.discA.toFixed(4) : '-') + '</td>' +
+          '<td class="py-2.5 px-3 text-right font-mono text-slate-700 font-medium">' + (item.discB ? item.discB.toFixed(4) : '-') + '</td>' +
+          '</tr>';
+      });
+
+      tbody.innerHTML = html;
+      document.getElementById("table-footer-summary").classList.remove("hidden");
+      document.getElementById("footer-matched-count").textContent = "顯示 " + filtered.length + " / 共 " + comparisonResults.length + " 項規格";
+      lucide.createIcons();
+    }
+
+    // 渲染 PM 談判建議
+    function renderPMInsights() {
+      var countUp = comparisonResults.filter(function(r) { return r.status === "UP"; }).length;
+      var countNew = comparisonResults.filter(function(r) { return r.status === "NEW"; }).length;
+      var newItems = comparisonResults.filter(function(r) { return r.status === "NEW"; }).map(function(i) { return i.partNo; }).join("、");
+      var totalQtyA = currentProjA ? (currentProjA.totalQty || 0) : 0;
+      var totalQtyB = currentProjB ? (currentProjB.totalQty || 0) : 0;
+      var qtyGrowPercent = totalQtyA > 0 ? (((totalQtyB - totalQtyA) / totalQtyA) * 100).toFixed(0) : 0;
+
+      var insights = [];
+      if (countUp === 0) {
+        insights.push("<strong>價格穩定性：</strong>原廠給予的延續核准單價【完全無調漲】（現有品項特值單價維持鎖定）。");
+      } else {
+        insights.push("<strong>價格異動警示：</strong>共有 <strong>" + countUp + "</strong> 項規格特值代 IN 遭原廠調漲，請立即覆核客戶端報價毛利是否被壓縮。");
+      }
+
+      if (Number(qtyGrowPercent) > 20) {
+        insights.push("<strong>以量壓價談判空間：</strong>本期申請顆數大幅成長 <strong>+" + qtyGrowPercent + "%</strong>，PM 可視客戶與市場競爭狀況，評估向原廠爭取更優惠折讓。");
+      }
+
+      if (countNew > 0) {
+        insights.push("<strong>本期新增規格：</strong>偵測到 <strong>" + countNew + "</strong> 個新規格（" + newItems + "），請確認客戶是否為設備追加原廠配線或選配件。");
+      }
+
+      document.getElementById("pm-insight-text").innerHTML = insights.join("<br>");
+    }
+
+    // 更新專案資訊卡
+    function updateProjectCards() {
+      if (currentProjA) {
+        document.getElementById("projA-badge").textContent = currentProjA.projectNo;
+        document.getElementById("projA-badge").className = "text-xs px-2 py-0.5 rounded font-mono bg-emerald-100 text-emerald-800 font-semibold";
+        document.getElementById("projA-dot").className = "w-2.5 h-2.5 rounded-full bg-emerald-500";
+
+        var displayNameA = currentProjA.customer !== '-' ? currentProjA.customer : currentProjA.projectName;
+        document.getElementById("file-label-a").textContent = "✓ 已載入: " + displayNameA + " (" + currentProjA.items.length + "項規格)";
+        document.getElementById("file-label-a").className = "text-xs text-emerald-700 font-bold truncate max-w-full px-2";
+
+        document.getElementById("infoA-name").textContent = currentProjA.projectName;
+        document.getElementById("infoA-no").textContent = currentProjA.projectNo;
+        document.getElementById("infoA-date").textContent = currentProjA.applyDate;
+        document.getElementById("infoA-deadline").textContent = currentProjA.deadline;
+        document.getElementById("infoA-qty").textContent = currentProjA.items.length + " 規格 / " + (currentProjA.totalQty || 0) + " Pcs";
+        document.getElementById("infoA-total").textContent = "NT$ " + formatMoney(currentProjA.specialCostTotal);
+      }
+
+      if (currentProjB) {
+        document.getElementById("projB-badge").textContent = currentProjB.projectNo;
+        document.getElementById("projB-badge").className = "text-xs px-2 py-0.5 rounded font-mono bg-sky-100 text-sky-800 font-semibold";
+        document.getElementById("projB-dot").className = "w-2.5 h-2.5 rounded-full bg-sky-500";
+
+        var displayNameB = currentProjB.customer !== '-' ? currentProjB.customer : currentProjB.projectName;
+        document.getElementById("file-label-b").textContent = "✓ 已載入: " + displayNameB + " (" + currentProjB.items.length + "項規格)";
+        document.getElementById("file-label-b").className = "text-xs text-sky-700 font-bold truncate max-w-full px-2";
+
+        document.getElementById("infoB-name").textContent = currentProjB.projectName;
+        document.getElementById("infoB-no").textContent = currentProjB.projectNo;
+        document.getElementById("infoB-date").textContent = currentProjB.applyDate;
+        document.getElementById("infoB-deadline").textContent = currentProjB.deadline;
+        document.getElementById("infoB-qty").textContent = currentProjB.items.length + " 規格 / " + (currentProjB.totalQty || 0) + " Pcs";
+        document.getElementById("infoB-total").textContent = "NT$ " + formatMoney(currentProjB.specialCostTotal);
+      }
+
+      checkCompareReadiness();
+    }
+
+    // 檔案讀取處理
+    function handleFileUpload(file, target) {
+      if (!file) return;
+      var fileName = file.name;
+      showToast("正在讀取檔案內容: " + fileName + "...");
+
+      var reader = new FileReader();
+
+      if (fileName.toLowerCase().endsWith(".pdf")) {
+        reader.onload = function(e) {
+          try {
+            var typedarray = new Uint8Array(e.target.result);
+            if (window.pdfjsLib) {
+              pdfjsLib.getDocument(typedarray).promise.then(function(pdf) {
+                var countPromises = [];
+                for (var p = 1; p <= pdf.numPages; p++) {
+                  countPromises.push(pdf.getPage(p).then(function(page) {
+                    return page.getTextContent().then(function(textContent) {
+                      return textContent.items.map(function(s) { return s.str; }).join(" ");
+                    });
+                  }));
+                }
+                Promise.all(countPromises).then(function(pagesText) {
+                  var fullText = pagesText.join("\n");
+                  var projectData = parsePdfContent(fullText, fileName);
+
+                  if (target === 'A') {
+                    currentProjA = projectData;
+                    showToast("已成功解析前期案：" + projectData.projectName + " (辨識出 " + projectData.items.length + " 項規格)");
+                  } else {
+                    currentProjB = projectData;
+                    showToast("已成功解析本期案：" + projectData.projectName + " (辨識出 " + projectData.items.length + " 項規格)");
+                  }
+                  updateProjectCards();
+                }).catch(function(err) {
+                  console.error("PDF 解析錯誤:", err);
+                  showToast("PDF 文本解析失敗，請確認非純掃描圖片。", true);
+                });
+              }).catch(function(err) {
+                console.error("PDF.js 加載失敗:", err);
+                showToast("PDF 加載失敗，請檢查檔案格式。", true);
+              });
+            } else {
+              showToast("PDF 解析庫未就緒，請重新整理頁面。", true);
+            }
+          } catch (err) {
+            console.error("處理 PDF 發生異常:", err);
+            showToast("讀取 PDF 發生異常，請重試。", true);
+          }
+        };
+        reader.readAsArrayBuffer(file);
+      } else {
+        reader.onload = function(e) {
+          var content = e.target.result;
+          var projectData = parsePdfContent(content, fileName);
+          if (target === 'A') currentProjA = projectData;
+          else currentProjB = projectData;
+          updateProjectCards();
+          showToast("已成功載入：" + fileName);
+        };
+        reader.readAsText(file);
+      }
+    }
+
+    // 拖曳上傳與點擊事件設定
+    function setupDropzone(dropzoneId, inputId, target) {
+      var dropzone = document.getElementById(dropzoneId);
+      var input = document.getElementById(inputId);
+      var dragCounter = 0;
+
+      dropzone.addEventListener("click", function() {
+        input.click();
+      });
+
+      input.addEventListener("change", function(e) {
+        if (e.target.files && e.target.files.length > 0) {
+          handleFileUpload(e.target.files[0], target);
+        }
+      });
+
+      dropzone.addEventListener("dragenter", function(e) {
+        e.preventDefault();
+        dragCounter++;
+        dropzone.classList.add("dropzone-active");
+      });
+
+      dropzone.addEventListener("dragover", function(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'copy';
+      });
+
+      dropzone.addEventListener("dragleave", function(e) {
+        e.preventDefault();
+        dragCounter--;
+        if (dragCounter <= 0) {
+          dragCounter = 0;
+          dropzone.classList.remove("dropzone-active");
+        }
+      });
+
+      dropzone.addEventListener("drop", function(e) {
+        e.preventDefault();
+        dragCounter = 0;
+        dropzone.classList.remove("dropzone-active");
+
+        if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+          handleFileUpload(e.dataTransfer.files[0], target);
+        }
+      });
+    }
+
+    // 全域防止拖放開啟檔案
+    window.addEventListener("dragover", function(e) { e.preventDefault(); }, false);
+    window.addEventListener("drop", function(e) { e.preventDefault(); }, false);
+
+    // 註冊按鈕事件
+    document.getElementById("start-compare-btn").addEventListener("click", computeComparison);
+    document.getElementById("inline-start-btn").addEventListener("click", computeComparison);
+    document.getElementById("search-spec").addEventListener("input", renderTable);
+    document.getElementById("filter-status").addEventListener("change", renderTable);
+
+    // 匯出比對結果 CSV
+    document.getElementById("export-csv-btn").addEventListener("click", function() {
+      if (comparisonResults.length === 0) {
+        showToast("尚未有比對資料可匯出，請先完成雙專案上傳並點擊「開始比對」！", true);
+        return;
+      }
+
+      var headers = [
+        "狀態",
+        "型號規格 (Part Number)",
+        "牌價 (P/L)",
+        "前期特值",
+        "本期特值",
+        "特值漲跌額",
+        "特值漲幅%",
+        "前期折數",
+        "本期折數"
+      ];
+
+      var csvRows = [];
+      csvRows.push(["專案延續比對報告", "產出時間: " + new Date().toLocaleString()].join(","));
+      csvRows.push(["基準案(前期)", currentProjA.projectNo + " - " + currentProjA.projectName, "客戶: " + currentProjA.customer, "申請日: " + currentProjA.applyDate, "特值總額: " + currentProjA.specialCostTotal].join(","));
+      csvRows.push(["延續案(本期)", currentProjB.projectNo + " - " + currentProjB.projectName, "客戶: " + currentProjB.customer, "申請日: " + currentProjB.applyDate, "特值總額: " + currentProjB.specialCostTotal].join(","));
+      csvRows.push("");
+      csvRows.push(headers.join(","));
+
+      comparisonResults.forEach(function(item) {
+        var statusLabel = "價格持平";
+        if (item.status === "NEW") statusLabel = "本期新增規格";
+        else if (item.status === "UP") statusLabel = "特值漲價";
+        else if (item.status === "DOWN") statusLabel = "特值調降";
+        else if (item.status === "REMOVED") statusLabel = "本期未申請";
+
+        var row = [
+          '"' + statusLabel + '"',
+          '"' + item.partNo + '"',
+          item.listPrice || 0,
+          item.costA !== null ? item.costA : "",
+          item.costB !== null ? item.costB : "",
+          item.costDiff || 0,
+          item.status === 'NEW' ? '0.00%' : (item.costGrowthRate.toFixed(2) + '%'),
+          item.discA !== null ? item.discA.toFixed(4) : "",
+          item.discB !== null ? item.discB.toFixed(4) : ""
+        ];
+        csvRows.push(row.join(","));
+      });
+
+      var csvString = "\uFEFF" + csvRows.join("\r\n");
+      var blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
+      var url = URL.createObjectURL(blob);
+      var link = document.createElement("a");
+      var fileName = "專案延續價格比對表_" + currentProjA.projectNo + "_vs_" + currentProjB.projectNo + "_" + new Date().toISOString().slice(0, 10) + ".csv";
+      link.setAttribute("href", url);
+      link.setAttribute("download", fileName);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      showToast("已成功下載 CSV: " + fileName);
+    });
+
+    // Toast 提示工具
+    function showToast(message, isError) {
+      var toast = document.getElementById("toast");
+      var toastMsg = document.getElementById("toast-msg");
+      var toastIcon = document.getElementById("toast-icon");
+
+      toastMsg.textContent = message;
+      if (isError) {
+        toastIcon.setAttribute("data-lucide", "alert-circle");
+        toastIcon.className = "w-4 h-4 text-rose-400";
+      } else {
+        toastIcon.setAttribute("data-lucide", "check-circle");
+        toastIcon.className = "w-4 h-4 text-emerald-400";
+      }
+      lucide.createIcons();
+
+      toast.classList.remove("translate-y-20", "opacity-0", "pointer-events-none");
+      setTimeout(function() {
+        toast.classList.add("translate-y-20", "opacity-0", "pointer-events-none");
+      }, 3500);
+    }
+
+    // 啟動初始化
+    window.onload = function() {
+      setupDropzone("dropzone-a", "file-input-a", "A");
+      setupDropzone("dropzone-b", "file-input-b", "B");
+      checkCompareReadiness();
+    };
+  </script>
+</body>
+</html>
