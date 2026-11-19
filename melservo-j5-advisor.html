@@ -1,0 +1,1264 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>MELSERVO-J5 選型與馬達尺寸圖顧問</title>
+  <style>
+    :root {
+      --bg: #F8FAFC;
+      --surface: #FFFFFF;
+      --surface-muted: #F1F5F9;
+      --ink: #0F172A;
+      --ink-secondary: #475569;
+      --border: #E2E8F0;
+      --accent: #E60012;
+      --accent-hover: #C80010;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+    .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      background: rgba(255,255,255,0.96);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border);
+    }
+    .header-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 16px;
+      height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 15px;
+      white-space: nowrap;
+    }
+    .nav-desktop {
+      display: none;
+      gap: 4px;
+    }
+    @media (min-width: 768px) {
+      .nav-desktop { display: flex; }
+      .nav-mobile { display: none !important; }
+    }
+    .nav-btn {
+      min-height: 40px;
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: 0;
+      background: transparent;
+      color: var(--ink-secondary);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .nav-btn.active {
+      background: var(--ink);
+      color: #FFFFFF;
+    }
+    .nav-btn:hover:not(.active) { background: var(--surface-muted); color: var(--ink); }
+    main {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 20px 16px 88px;
+    }
+    @media (min-width: 768px) { main { padding: 28px 24px 48px; } }
+    .page-head {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 16px;
+      margin-bottom: 20px;
+    }
+    .page-head h1 { margin: 0; font-size: 22px; font-weight: 700; }
+    .page-head p { margin: 6px 0 0; font-size: 13px; color: var(--ink-secondary); }
+    .grid-wizard {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+    @media (min-width: 1024px) {
+      .grid-wizard { grid-template-columns: 7fr 5fr; }
+      .grid-dim { grid-template-columns: 4fr 8fr; }
+      .sticky-aside { position: sticky; top: 76px; }
+    }
+    .grid-dim {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+    .step-tag { font-family: var(--mono); font-size: 12px; font-weight: 700; color: var(--accent); }
+    .card-title { margin: 2px 0 0; font-size: 16px; font-weight: 700; }
+    .card-head {
+      border-bottom: 1px solid #F1F5F9;
+      padding-bottom: 12px;
+      margin-bottom: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+    .opt-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+    @media (min-width: 640px) { .opt-grid.cols-2 { grid-template-columns: 1fr 1fr; } .opt-grid.cols-3 { grid-template-columns: repeat(3, 1fr); } }
+    .opt-btn {
+      min-height: 52px;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #FFFFFF;
+      text-align: left;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .opt-btn:hover { border-color: #CBD5E1; background: #F8FAFC; }
+    .opt-btn.active {
+      border-color: var(--accent);
+      background: rgba(230, 0, 18, 0.04);
+      box-shadow: 0 0 0 1px var(--accent);
+    }
+    .opt-btn .t { font-size: 14px; font-weight: 600; color: var(--ink); }
+    .opt-btn.active .t { color: var(--accent); }
+    .opt-btn .s { font-size: 12px; color: var(--ink-secondary); margin-top: 3px; }
+    .kw-strip { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    .kw-btn {
+      min-height: 40px;
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #FFFFFF;
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--ink);
+    }
+    .kw-btn.active { background: var(--ink); color: #FFFFFF; border-color: var(--ink); }
+    input[type="number"], input[type="text"], select {
+      min-height: 44px;
+      padding: 8px 12px;
+      border: 1px solid #CBD5E1;
+      border-radius: 8px;
+      font-size: 14px;
+      background: #F8FAFC;
+      color: var(--ink);
+    }
+    input:focus, select:focus { outline: 2px solid rgba(230, 0, 18, 0.25); border-color: var(--accent); background: #FFFFFF; }
+    .metrics-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #F8FAFC;
+      margin: 12px 0;
+    }
+    .metrics-row > div { padding: 10px 12px; }
+    .metrics-row > div:first-child { border-right: 1px solid var(--border); }
+    .metrics-4 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-top: 12px;
+    }
+    @media (min-width: 640px) { .metrics-4 { grid-template-columns: repeat(4, 1fr); } }
+    .metric-box {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #F8FAFC;
+      padding: 10px 12px;
+    }
+    .metric-box .k { font-size: 11px; color: #64748B; }
+    .metric-box .v { font-family: var(--mono); font-size: 14px; font-weight: 700; color: var(--ink); margin-top: 2px; }
+    .bom-list { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .bom-item { padding: 12px 14px; border-bottom: 1px solid var(--border); background: #FFFFFF; }
+    .bom-item:last-child { border-bottom: 0; }
+    .remark-box {
+      margin-top: 6px;
+      font-size: 11px;
+      color: #475569;
+      background: #F8FAFC;
+      border: 1px solid #F1F5F9;
+      border-radius: 6px;
+      padding: 5px 8px;
+    }
+    .warn-box {
+      border: 1px solid #FDE68A;
+      background: #FFFBEB;
+      color: #78350F;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 12px;
+      margin-bottom: 12px;
+    }
+    .warn-box.error { border-color: #FCA5A5; background: #FEF2F2; color: #7F1D1D; }
+    .btn-primary {
+      min-height: 46px;
+      padding: 10px 16px;
+      border-radius: 10px;
+      border: 0;
+      background: var(--accent);
+      color: #FFFFFF;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-outline {
+      min-height: 44px;
+      padding: 8px 14px;
+      border-radius: 10px;
+      border: 1px solid #CBD5E1;
+      background: #FFFFFF;
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .btn-sm {
+      min-height: 36px;
+      padding: 5px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #FFFFFF;
+      color: var(--ink);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .btn-sm:hover { border-color: var(--accent); color: var(--accent); }
+    .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; background: #FFFFFF; }
+    table { width: 100%; min-width: 680px; border-collapse: collapse; text-align: left; font-size: 13px; }
+    th { background: #F8FAFC; padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--ink-secondary); font-weight: 600; }
+    td { padding: 11px 14px; border-bottom: 1px solid #F1F5F9; vertical-align: top; }
+    tr:last-child td { border-bottom: 0; }
+    .dim-table { min-width: 100%; }
+    .dim-svg { width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--border); background: #FFFFFF; display: block; }
+    .nav-mobile {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 40;
+      height: 56px;
+      background: rgba(255,255,255,0.96);
+      backdrop-filter: blur(8px);
+      border-top: 1px solid var(--border);
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+    }
+    .nav-mobile button {
+      border: 0;
+      background: transparent;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--ink-secondary);
+      cursor: pointer;
+      min-height: 44px;
+    }
+    .nav-mobile button.active { color: var(--accent); }
+    .hidden { display: none !important; }
+    .label-sm { font-size: 12px; font-weight: 600; color: var(--ink-secondary); margin: 12px 0 8px; display: block; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div class="brand">
+        <svg width="22" height="20" viewBox="0 0 24 22" fill="none" aria-hidden="true">
+          <polygon points="12,1 16,8 12,15 8,8" fill="#E60012" />
+          <polygon points="12,15 4,15 0,21 8,21" fill="#E60012" />
+          <polygon points="12,15 20,15 24,21 16,21" fill="#E60012" />
+        </svg>
+        <span>MELSERVO-J5 選型顧問</span>
+      </div>
+      <nav class="nav-desktop">
+        <button class="nav-btn active" data-tab="wizard" onclick="switchTab('wizard')">選型精靈</button>
+        <button class="nav-btn" data-tab="dimensions" onclick="switchTab('dimensions')">馬達尺寸圖</button>
+        <button class="nav-btn" data-tab="specs" onclick="switchTab('specs')">規格總覽</button>
+        <button class="nav-btn" data-tab="decoder" onclick="switchTab('decoder')">型號解析</button>
+      </nav>
+      <div class="mono" style="font-size:12px;color:#64748B;">L(NA)03180CHN-K</div>
+    </div>
+  </header>
+
+  <main>
+    <div class="page-head">
+      <h1 id="page-title">SV J5 互動式選型精靈</h1>
+      <p>速度頻寬 3.5 kHz · 最速通信週期 31.25 μs · 26-bit 無電池絕對型編碼器</p>
+    </div>
+
+    <!-- TAB 1: WIZARD -->
+    <section id="tab-wizard" class="grid-wizard">
+      <div id="wizard-steps"></div>
+      <aside class="sticky-aside">
+        <div class="card" id="bom-panel"></div>
+      </aside>
+    </section>
+
+    <!-- TAB 2: MOTOR DIMENSIONS -->
+    <section id="tab-dimensions" class="hidden grid-dim">
+      <div id="dim-controls"></div>
+      <div id="dim-preview"></div>
+    </section>
+
+    <!-- TAB 3: SPECS -->
+    <section id="tab-specs" class="hidden">
+      <div class="card">
+        <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:center;">
+          <div style="display:flex;flex-wrap:wrap;gap:8px;">
+            <button class="kw-btn active" data-spec="amplifiers" onclick="switchSpec('amplifiers')">伺服放大器</button>
+            <button class="kw-btn" data-spec="controllers" onclick="switchSpec('controllers')">運動控制器</button>
+            <button class="kw-btn" data-spec="rotary" onclick="switchSpec('rotary')">旋轉馬達 HK</button>
+            <button class="kw-btn" data-spec="linear" onclick="switchSpec('linear')">線性 LM / 直驅 TM</button>
+          </div>
+          <input id="spec-search" type="text" placeholder="搜尋型號或規格..." oninput="renderSpecs()" style="min-width:220px;" />
+        </div>
+      </div>
+      <div id="specs-table-container"></div>
+    </section>
+
+    <!-- TAB 4: DECODER -->
+    <section id="tab-decoder" class="hidden">
+      <div class="card">
+        <div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:end;">
+          <div>
+            <h2 style="margin:0;font-size:18px;">MELSERVO-J5 型號規則與尾碼解析器</h2>
+            <p style="margin:4px 0 0;font-size:13px;color:#475569;">輸入放大器型號（例：MR-J5-100G4-RJN1）或點選預設範例</p>
+          </div>
+          <input id="decoder-input" type="text" placeholder="例：MR-J5-70G-HS" oninput="renderDecoder()" style="min-width:240px;font-family:var(--mono);" />
+        </div>
+        <div id="decoder-presets" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;"></div>
+        <div id="decoder-result" style="margin-top:16px;"></div>
+      </div>
+      <div class="card">
+        <h3 style="margin:0 0 12px;font-size:15px;">常用代碼速查表</h3>
+        <div id="decoder-glossary"></div>
+      </div>
+    </section>
+  </main>
+
+  <nav class="nav-mobile">
+    <button class="active" data-tab="wizard" onclick="switchTab('wizard')">選型精靈</button>
+    <button data-tab="dimensions" onclick="switchTab('dimensions')">馬達尺寸圖</button>
+    <button data-tab="specs" onclick="switchTab('specs')">規格總覽</button>
+    <button data-tab="decoder" onclick="switchTab('decoder')">型號解析</button>
+  </nav>
+
+  <script>
+    const DATA = {"controllers":[{"id":"mx-r","model":"MXR300-16/32/64 · MXR500-128/256","series":"MELSEC MX Controller (MX-R)","protocol":["cc-link-tsn"],"maxAxes":"16 ~ 256 軸","minCycleUs":"125 μs","programmingMode":"Sequence + Motion 整合 (GX Works3)","highlights":"整合順序控制、運動控制與網路；最多可混載 3 種不同掃描/通信週期，大幅縮減控制盤空間。"},{"id":"mx-f","model":"MXF100-8-_32 · MXF100-16-_32","series":"MELSEC MX Controller (MX-F)","protocol":["cc-link-tsn"],"maxAxes":"8 / 16 軸","minCycleUs":"250 μs","programmingMode":"Sequence + Motion 整合 (GX Works3)","highlights":"支援 iQ-F 系列擴充模組，適合中小型高速產線一體化控制，最多 38/46 從站。"},{"id":"rd78gh","model":"RD78GHV (128軸) · RD78GHW (256軸)","series":"MELSEC iQ-R 高性能運動模組","protocol":["cc-link-tsn"],"maxAxes":"128 / 256 軸","minCycleUs":"31.25 μs","programmingMode":"PLCopen Motion Control FB / ST 語言","highlights":"四核心處理器實現業界最速 31.25 μs 通信週期；支援線型/星型/環型拓樸與 TSN 安全通信。"},{"id":"rd78g","model":"RD78G4 / G8 / G16 / G32 / G64","series":"MELSEC iQ-R 運動控制模組","protocol":["cc-link-tsn"],"maxAxes":"4 ~ 64 軸","minCycleUs":"62.5 μs (FB) / 250 μs (簡易)","programmingMode":"簡易運動模式 (點表/電子凸輪) 或 PLCopen FB","highlights":"RD78G4/8/16 可切換簡易運動模式，方便從 RD77MS / QD77MS 無痛遷移程式與定位資料。"},{"id":"fx5-ssc-g","model":"FX5-40SSC-G (4軸) · FX5-80SSC-G (8軸)","series":"MELSEC iQ-F 簡易運動模組","protocol":["cc-link-tsn"],"maxAxes":"4 / 8 軸 (單 CPU 最多 4 台模組)","minCycleUs":"500 μs","programmingMode":"簡易運動模式 (位置表 + 同步凸輪)","highlights":"高性價比小型設備首選，支援 FX5U / FX5UC (FX5UC 需搭 FX5-CNV-IFC，CPU FW v1.230+)。"},{"id":"swm-g","model":"SWM-G (MR-SWMG16/32/64/128-U/-E) · SWM-G-N1","series":"PC 內嵌軟體運動控制 (RTX64)","protocol":["cc-link-tsn","ethercat"],"maxAxes":"16 ~ 128 軸","minCycleUs":"125 μs","programmingMode":"C / C++ / C# / .NET SDK (Windows + RTX64)","highlights":"無需專用運動板卡，透過標準網卡即實現即時控制；SWM-G-N1 可同時支援 CC-Link IE TSN 與 EtherCAT。"},{"id":"mr-em441g","model":"MR-EM441G (PCIe Gen2 x1)","series":"PC 內嵌運動控制卡","protocol":["cc-link-tsn"],"maxAxes":"64 軸 (2 系統 / 120 站)","minCycleUs":"62.5 μs (4軸) / 250 μs (60軸)","programmingMode":"EM Motion SDK (C/C++/C#)","highlights":"硬體板卡運算，不佔用主機端 CPU 資源；注意不支援 Class A 從站裝置與 TSN 安全通信。"},{"id":"rd77ms","model":"RD77MS2/4/8/16 · QD77MS2/4/16 · RnMTCPU","series":"SSCNET III/H 相容既有控制器","protocol":["sscnet"],"maxAxes":"2 ~ 64 軸","minCycleUs":"222 μs (0.222 ms)","programmingMode":"簡易運動模式 / MT Works2","highlights":"保留既有 SSCNET III/H 光纖架構與程式，搭配 MR-J5-B 升級至 J5 高精度 26-bit 系統與 Maisart 診斷。"}],"amplifiers":[{"id":"j5-g","series":"MR-J5-_G / MR-J5-_G4","typeLabel":"1 軸標準網路型 (CC-Link IE TSN)","voltage":"AC 200V (0.1~25kW) / AC 400V (0.6~25kW)","capacityRange":"0.1 ~ 25 kW","protocols":"CC-Link IE TSN (Class B/A) / IE Field Basic","minCycle":"31.25 μs (需韌體 A6 以上)","fullClosedSupport":"2 線式串列編碼器 (CN2)","safetyFunctions":"標準 STO (Cat.3 PLd / SIL2)；網路安全需搭 -RJ / -HS","notes":"0.1~2kW 200V 型號支援單相 AC200V 輸入 (>750W 負載率限 75%)；12~25kW 需外接 DBU 動力制動單元。"},{"id":"j5-g-rj","series":"MR-J5-_G-RJ / MR-J5-_G4-RJ","typeLabel":"1 軸高機能安全・4線全閉環型","voltage":"AC 200V (0.1~25kW) / AC 400V (0.6~25kW)","capacityRange":"0.1 ~ 25 kW","protocols":"CC-Link IE TSN (+安全通信) / -RJN1 支援 EtherCAT FSoE & CIP Safety","minCycle":"31.25 μs (一般) / 125 μs (安全通信)","fullClosedSupport":"2 線/4 線式串列 & ABZ 相差動編碼器 (CN2L)","safetyFunctions":"STO / SS1 / SS2 / SOS / SBC / SLS / SSM / SDI / SLI / SLT (CN8 或網路安全)","notes":"需連接 4 線式光學尺、A/B/Z 差動編碼器或使用完整安全監視機能時必選。"},{"id":"j5-g-hs","series":"MR-J5-_G-HS / MR-J5-_G4-HS","typeLabel":"1 軸獨立高階安全 DI/DO 型","voltage":"AC 200V (0.1~7kW) / AC 400V (0.6~7kW)","capacityRange":"0.1 ~ 7 kW","protocols":"CC-Link IE TSN / -HSN1 支援 EtherCAT & EtherNet/IP","minCycle":"31.25 μs","fullClosedSupport":"2 線/4 線式串列 & ABZ (CN2L) + CN7 脈衝列輸出","safetyFunctions":"Cat.4 PLe / SIL3 (CN3 直接整合 3 系統安全 DI/DO，免安全 PLC 即可實現 SS1/SLS 等)","notes":"適合需獨立安全 I/O 迴路且不依賴安全網路的機台；保護等級為 IP00。"},{"id":"j5-n1","series":"MR-J5-_G-N1 / MR-J5-_G4-N1","typeLabel":"1 軸 EtherCAT / EtherNet/IP 型","voltage":"AC 200V (0.1~25kW) / AC 400V (0.6~25kW)","capacityRange":"0.1 ~ 25 kW","protocols":"EtherCAT (CoE/EoE/FSoE) · EtherNet/IP (CIP Safety)","minCycle":"125 μs (EtherCAT) / 1 ms (EtherNet/IP)","fullClosedSupport":"2 線式 (-N1)；4 線/ABZ (-RJN1 / -HSN1)","safetyFunctions":"標準 STO；-RJN1/-HSN1 支援 FSoE 與 CIP Safety","notes":"注意：-N1 系列「不支援」押付運轉 (Push mode) 與驅動器間通信機能。"},{"id":"j5w2","series":"MR-J5W2-_G / -B / -G-N1 (2軸一體)","typeLabel":"2 軸一體型伺服放大器","voltage":"AC 200V (22:0.2kW×2, 44:0.4kW×2, 77:0.75kW×2, 1010:1.0kW×2)","capacityRange":"0.2 ~ 1.0 kW × 2 軸","protocols":"CC-Link IE TSN (-G) / EtherCAT (-G-N1) / SSCNET III/H (-B)","minCycle":"62.5 μs (-G) / 250 μs (-N1) / 222 μs (-B)","fullClosedSupport":"僅支援 2 線式串列全閉環與尺度量測 (-G / -B)","safetyFunctions":"-G 支援網路安全 STO~SLT；-B 僅支援 CN8 硬體 STO","notes":"兩軸可自由混搭旋轉、線性與直驅馬達；1010 型號不支援單相 AC200V 輸入。"},{"id":"j5w3","series":"MR-J5W3-_G / -B / -G-N1 (3軸一體)","typeLabel":"3 軸超精巧一體型 (寬度僅 75 mm)","voltage":"AC 200V (222:0.2kW×3, 444:0.4kW×3)","capacityRange":"0.2 / 0.4 kW × 3 軸","protocols":"CC-Link IE TSN (-G) / EtherCAT (-G-N1) / SSCNET III/H (-B)","minCycle":"125 μs (-G) / 250 μs (-N1) / 222 μs (-B)","fullClosedSupport":"不支援全閉環控制與尺度量測","safetyFunctions":"-G 支援網路安全 STO~SLT；-B 僅支援 CN8 硬體 STO","notes":"節省極致電控盤空間與配線，三軸可混搭旋轉、線性與直驅馬達。"},{"id":"j5d-g4","series":"MR-J5D1 / D2 / D3-_G4 (-N1) + MR-CV_4","typeLabel":"400V 共直流母線多軸驅動模組系統","voltage":"AC 400V (需搭配 MR-CV11K4 ~ 75K4 電源再生變流器)","capacityRange":"D1: 1~7kW / D2: 1~7kW×2 / D3: 1~2kW×3","protocols":"CC-Link IE TSN / EtherCAT / EtherNet/IP (-N1)","minCycle":"31.25 μs (D1) / 62.5 μs (D2) / 125 μs (D3)","fullClosedSupport":"D1 支援 2/4 線及 ABZ (CN2AL)；D2 僅 2 線式；D3 不支援","safetyFunctions":"支援網路安全 STO~SLT 及 CN8 STO/SS1","notes":"僅限驅動「旋轉馬達」(不支援線性與 DD 馬達)；不對應 SEMI F47；總寬度限 ≤1500 mm 且須由大至小排列。"},{"id":"j5-b","series":"MR-J5-_B / MR-J5-_B4 (-RJ)","typeLabel":"1 軸 SSCNET III/H 光纖型","voltage":"AC 200V (0.1~25kW) / AC 400V (0.6~25kW)","capacityRange":"0.1 ~ 25 kW","protocols":"SSCNET III/H (50Mbps 雙向光纖，0.222 / 0.444 / 0.888 ms)","minCycle":"222 μs","fullClosedSupport":"2 線式；-RJ 支援 4 線與 ABZ 差動 (CN2L)","safetyFunctions":"STO (-B) / STO·SS1·SBC (-B-RJ)","notes":"支援既有 HG 馬達續用/替換升級；注意不支援 LM-AJ 與 LM-AU 線性馬達。"},{"id":"j5-a","series":"MR-J5-_A / MR-J5-_A4 (-RJ)","typeLabel":"1 軸泛用脈衝 / 類比輸入型","voltage":"AC 200V (0.1~25kW) / AC 400V (0.6~25kW)","capacityRange":"0.1 ~ 25 kW","protocols":"脈衝列 (差動 4Mpps / 開集極 200kpps) + 類比 (±10V/±8V) + 內藏定位點表","minCycle":"硬體即時脈衝 / Modbus RTU (RS-485)","fullClosedSupport":"2 線式；-RJ 支援 4 線與 ABZ 差動 (CN2L)","safetyFunctions":"STO (-A) / STO·SS1 (-A-RJ)","notes":"適合傳統 PLC 脈衝發波或獨立類比速度/轉矩控制應用。"},{"id":"md333g","series":"MR-MD333G / MR-MD333G-N1","typeLabel":"DC 48V 基板型 3 軸驅動模組","voltage":"DC 48V (主電源/控制共用或分離)","capacityRange":"0.03 kW (30W) × 3 軸","protocols":"CC-Link IE TSN / EtherCAT (-N1)","minCycle":"250 μs","fullClosedSupport":"不支援","safetyFunctions":"不搭載 STO 安全機能","notes":"重量僅 0.12 kg，耐振動 39 m/s² 可直接鎖附於可動軸頭部；搭配 HK-KT0536E2-S1 (48V) 或 HG-AK。"}],"rotaryMotors":[{"model":"HK-KT053W(B)J","series":"HK-KT","voltage":"200V","powerKw":0.05,"ratedSpeedRpm":3000,"maxSpeedRpm":6700,"ratedTorqueNm":0.16,"maxTorqueNm":0.56,"boostMaxTorqueNm":0.64,"flangeMm":40,"standardAmp200":"MR-J5-10_","boostAmp200":"MR-J5-20_","cableType":"單接頭 (MR-AEP1CBL / MR-AEPB1CBL)","inertiaLabel":"低慣量・小容量"},{"model":"HK-KT13W(B)J","series":"HK-KT","voltage":"200V","powerKw":0.1,"ratedSpeedRpm":3000,"maxSpeedRpm":6700,"ratedTorqueNm":0.32,"maxTorqueNm":1.1,"boostMaxTorqueNm":1.4,"flangeMm":40,"standardAmp200":"MR-J5-10_","boostAmp200":"MR-J5-20_","cableType":"單接頭 (MR-AEP1CBL / MR-AEPB1CBL)","inertiaLabel":"低慣量・小容量"},{"model":"HK-KT23W(B)J","series":"HK-KT","voltage":"200V","powerKw":0.2,"ratedSpeedRpm":3000,"maxSpeedRpm":6700,"ratedTorqueNm":0.64,"maxTorqueNm":2.2,"boostMaxTorqueNm":2.6,"flangeMm":60,"standardAmp200":"MR-J5-20_","boostAmp200":"MR-J5-40_","cableType":"單接頭 (MR-AEP1CBL / MR-AEPB1CBL)","inertiaLabel":"低慣量・小容量"},{"model":"HK-KT43W(B)J","series":"HK-KT","voltage":"200V","powerKw":0.4,"ratedSpeedRpm":3000,"maxSpeedRpm":6700,"ratedTorqueNm":1.3,"maxTorqueNm":4.5,"boostMaxTorqueNm":5.1,"flangeMm":60,"standardAmp200":"MR-J5-40_","boostAmp200":"MR-J5-60_","cableType":"單接頭 (MR-AEP1CBL / MR-AEPB1CBL)","inertiaLabel":"低慣量・小容量"},{"model":"HK-KT63W(B)J","series":"HK-KT","voltage":"200V","powerKw":0.6,"ratedSpeedRpm":3000,"maxSpeedRpm":6700,"ratedTorqueNm":1.9,"maxTorqueNm":6.7,"boostMaxTorqueNm":7.6,"flangeMm":80,"standardAmp200":"MR-J5-60_","boostAmp200":"MR-J5-70_","cableType":"單接頭 (MR-AEP1CBL / MR-AEPB1CBL)","inertiaLabel":"低慣量・小容量"},{"model":"HK-KT7M3W(B)J","series":"HK-KT","voltage":"200V","powerKw":0.75,"ratedSpeedRpm":3000,"maxSpeedRpm":6700,"ratedTorqueNm":2.4,"maxTorqueNm":8.4,"boostMaxTorqueNm":9.6,"flangeMm":80,"standardAmp200":"MR-J5-70_","boostAmp200":"MR-J5-100_","cableType":"單接頭 (MR-AEP1CBL / MR-AEPB1CBL)","inertiaLabel":"低慣量・小容量"},{"model":"HK-KT1M3W(B)J","series":"HK-KT","voltage":"200V","powerKw":1,"ratedSpeedRpm":3000,"maxSpeedRpm":6700,"ratedTorqueNm":3.2,"maxTorqueNm":11.1,"boostMaxTorqueNm":12.7,"flangeMm":80,"standardAmp200":"MR-J5-100_","boostAmp200":"MR-J5-200_","cableType":"單接頭 (MR-AEP1CBL / MR-AEPB1CBL)","inertiaLabel":"低慣量・小容量"},{"model":"HK-KT153W(B)J","series":"HK-KT","voltage":"200V","powerKw":1.5,"ratedSpeedRpm":3000,"maxSpeedRpm":6000,"ratedTorqueNm":4.8,"maxTorqueNm":16.7,"flangeMm":90,"standardAmp200":"MR-J5-200_","cableType":"雙接頭/2線 (MR-AEP2CBL / MR-AEPB2CBL)","inertiaLabel":"低慣量・小容量"},{"model":"HK-KT202W(B)J","series":"HK-KT","voltage":"200V","powerKw":2,"ratedSpeedRpm":2000,"maxSpeedRpm":4500,"ratedTorqueNm":9.5,"maxTorqueNm":28.6,"flangeMm":90,"standardAmp200":"MR-J5-200_","cableType":"雙接頭/2線 (MR-AEP2CBL / MR-AEPB2CBL)","inertiaLabel":"低慣量・小容量"},{"model":"HK-KT434W(B)J","series":"HK-KT","voltage":"400V","powerKw":0.4,"ratedSpeedRpm":3000,"maxSpeedRpm":6700,"ratedTorqueNm":1.3,"maxTorqueNm":4.5,"flangeMm":60,"standardAmp400":"MR-J5-60_4","cableType":"單接頭 (MR-AEP1CBL / MR-AEPB1CBL)","inertiaLabel":"低慣量・400V","notes":"400V HK-KT 亦可由 200V 放大器驅動，實現低速高轉矩寬轉速驅動。"},{"model":"HK-KT7M34W(B)J","series":"HK-KT","voltage":"400V","powerKw":0.75,"ratedSpeedRpm":3000,"maxSpeedRpm":6700,"ratedTorqueNm":2.4,"maxTorqueNm":8.4,"flangeMm":80,"standardAmp400":"MR-J5-100_4","cableType":"單接頭 (MR-AEP1CBL / MR-AEPB1CBL)","inertiaLabel":"低慣量・400V"},{"model":"HK-KT1M34W(B)J","series":"HK-KT","voltage":"400V","powerKw":1,"ratedSpeedRpm":3000,"maxSpeedRpm":6700,"ratedTorqueNm":3.2,"maxTorqueNm":11.1,"flangeMm":80,"standardAmp400":"MR-J5-100_4","boostAmp400":"MR-J5-200_4","boostMaxTorqueNm":12.7,"cableType":"單接頭 (MR-AEP1CBL / MR-AEPB1CBL)","inertiaLabel":"低慣量・400V"},{"model":"HK-KT0536E2-S1","series":"HK-KT","voltage":"48V","powerKw":0.05,"ratedSpeedRpm":3000,"maxSpeedRpm":4500,"ratedTorqueNm":0.16,"maxTorqueNm":0.48,"flangeMm":40,"standardAmp200":"MR-MD333G","cableType":"專用 48V 基板連接線組","inertiaLabel":"DC48V 微型低慣量","notes":"專配 MR-MD333G DC48V 基板型 3 軸放大器。"},{"model":"HK-MT23VWJ","series":"HK-MT","voltage":"200V","powerKw":0.2,"ratedSpeedRpm":3000,"maxSpeedRpm":10000,"ratedTorqueNm":0.64,"maxTorqueNm":1.9,"flangeMm":60,"standardAmp200":"MR-J5-20_","boostAmp200":"MR-J5-40_","boostMaxTorqueNm":2.2,"cableType":"單接頭 (MR-AEP1CBL)","inertiaLabel":"超低慣量・10,000 r/min 高速","notes":"HK-MT_VWJ 採用 26-bit 增量式編碼器，無電池絕對位置僅限標準 6700rpm 型號。"},{"model":"HK-MT43VWJ","series":"HK-MT","voltage":"200V","powerKw":0.4,"ratedSpeedRpm":3000,"maxSpeedRpm":10000,"ratedTorqueNm":1.3,"maxTorqueNm":3.8,"flangeMm":60,"standardAmp200":"MR-J5-40_","boostAmp200":"MR-J5-60_","boostMaxTorqueNm":4.5,"cableType":"單接頭 (MR-AEP1CBL)","inertiaLabel":"超低慣量・10,000 r/min 高速","notes":"HK-MT_VWJ 採用 26-bit 增量式編碼器，適合高速貼片、半導體分選。"},{"model":"HK-MT7M3W(B)J","series":"HK-MT","voltage":"200V","powerKw":0.75,"ratedSpeedRpm":3000,"maxSpeedRpm":6700,"ratedTorqueNm":2.4,"maxTorqueNm":8.4,"flangeMm":80,"standardAmp200":"MR-J5-70_","boostAmp200":"MR-J5-100_","boostMaxTorqueNm":9.6,"cableType":"單接頭 (MR-AEP1CBL / MR-AEPB1CBL)","inertiaLabel":"超低慣量・極高加減速"},{"model":"HK-ST52W(B)J","series":"HK-ST","voltage":"200V","powerKw":0.5,"ratedSpeedRpm":2000,"maxSpeedRpm":4000,"ratedTorqueNm":2.4,"maxTorqueNm":7.2,"flangeMm":130,"standardAmp200":"MR-J5-60_","boostAmp200":"MR-J5-70_","boostMaxTorqueNm":8.4,"cableType":"分離接頭 (MR-AE2* + 動力線)","inertiaLabel":"中慣量・高剛性"},{"model":"HK-ST102W(B)J / 4W(B)J","series":"HK-ST","voltage":"200V","powerKw":1,"ratedSpeedRpm":2000,"maxSpeedRpm":4000,"ratedTorqueNm":4.8,"maxTorqueNm":14.3,"flangeMm":130,"standardAmp200":"MR-J5-100_","boostAmp200":"MR-J5-200_","boostMaxTorqueNm":16.7,"standardAmp400":"MR-J5-100_4","boostAmp400":"MR-J5-200_4","cableType":"分離接頭 (Push-Turn 一鍵鎖定)","inertiaLabel":"中慣量・中容量"},{"model":"HK-ST202W(B)J / 4W(B)J","series":"HK-ST","voltage":"200V","powerKw":2,"ratedSpeedRpm":2000,"maxSpeedRpm":4000,"ratedTorqueNm":9.5,"maxTorqueNm":28.6,"flangeMm":176,"standardAmp200":"MR-J5-200_","boostAmp200":"MR-J5-350_","boostMaxTorqueNm":33.4,"standardAmp400":"MR-J5-200_4","boostAmp400":"MR-J5-350_4","cableType":"分離接頭 (Push-Turn 一鍵鎖定)","inertiaLabel":"中慣量・中容量"},{"model":"HK-ST352W(B)J / 4W(B)J","series":"HK-ST","voltage":"200V","powerKw":3.5,"ratedSpeedRpm":2000,"maxSpeedRpm":3500,"ratedTorqueNm":16.7,"maxTorqueNm":50.1,"flangeMm":176,"standardAmp200":"MR-J5-350_","boostAmp200":"MR-J5-500_","boostMaxTorqueNm":58.5,"standardAmp400":"MR-J5-350_4","boostAmp400":"MR-J5-500_4","cableType":"分離接頭 (Push-Turn 一鍵鎖定)","inertiaLabel":"中慣量・中容量"},{"model":"HK-ST502W(B)J / 4W(B)J","series":"HK-ST","voltage":"200V","powerKw":5,"ratedSpeedRpm":2000,"maxSpeedRpm":3000,"ratedTorqueNm":23.9,"maxTorqueNm":71.6,"flangeMm":176,"standardAmp200":"MR-J5-500_","boostAmp200":"MR-J5-700_","boostMaxTorqueNm":83.6,"standardAmp400":"MR-J5-500_4","boostAmp400":"MR-J5-700_4","cableType":"分離接頭 (Push-Turn 一鍵鎖定)","inertiaLabel":"中慣量・中容量"},{"model":"HK-ST702W(B)J / 4W(B)J","series":"HK-ST","voltage":"200V","powerKw":7,"ratedSpeedRpm":2000,"maxSpeedRpm":3000,"ratedTorqueNm":33.4,"maxTorqueNm":100,"flangeMm":176,"standardAmp200":"MR-J5-700_","standardAmp400":"MR-J5-700_4","cableType":"分離接頭 (Push-Turn 一鍵鎖定)","inertiaLabel":"中慣量・中容量"},{"model":"HK-RT103W(B)J / 4W(B)J","series":"HK-RT","voltage":"200V","powerKw":1,"ratedSpeedRpm":3000,"maxSpeedRpm":6700,"ratedTorqueNm":3.2,"maxTorqueNm":11.1,"boostMaxTorqueNm":12.7,"flangeMm":90,"standardAmp200":"MR-J5-100_","boostAmp200":"MR-J5-200_","standardAmp400":"MR-J5-100_4","boostAmp400":"MR-J5-200_4","cableType":"單接頭 (1~2kW)","inertiaLabel":"超低慣量・中容量高速"},{"model":"HK-RT203W(B)J / 4W(B)J","series":"HK-RT","voltage":"200V","powerKw":2,"ratedSpeedRpm":3000,"maxSpeedRpm":6000,"ratedTorqueNm":6.4,"maxTorqueNm":22.3,"boostMaxTorqueNm":25.5,"flangeMm":90,"standardAmp200":"MR-J5-200_","boostAmp200":"MR-J5-350_","standardAmp400":"MR-J5-200_4","boostAmp400":"MR-J5-350_4","cableType":"單接頭 (1~2kW)","inertiaLabel":"超低慣量・中容量高速"},{"model":"HK-RT353W(B)J / 4W(B)J","series":"HK-RT","voltage":"200V","powerKw":3.5,"ratedSpeedRpm":3000,"maxSpeedRpm":6000,"ratedTorqueNm":11.1,"maxTorqueNm":38.9,"flangeMm":130,"standardAmp200":"MR-J5-350_","boostAmp200":"MR-J5-500_","boostMaxTorqueNm":44.5,"standardAmp400":"MR-J5-350_4","boostAmp400":"MR-J5-500_4","cableType":"分離接頭 (Push-Turn)","inertiaLabel":"超低慣量・中容量高速"},{"model":"HK-RT503W(B)J / 4W(B)J","series":"HK-RT","voltage":"200V","powerKw":5,"ratedSpeedRpm":3000,"maxSpeedRpm":5000,"ratedTorqueNm":15.9,"maxTorqueNm":55.7,"flangeMm":130,"standardAmp200":"MR-J5-500_","boostAmp200":"MR-J5-700_","boostMaxTorqueNm":63.7,"standardAmp400":"MR-J5-500_4","boostAmp400":"MR-J5-700_4","cableType":"分離接頭 (Push-Turn)","inertiaLabel":"超低慣量・中容量高速"},{"model":"HK-JT11K1M(B)J / 4(B)J","series":"HK-JT","voltage":"200V","powerKw":11,"ratedSpeedRpm":1500,"maxSpeedRpm":3000,"ratedTorqueNm":70,"maxTorqueNm":210,"flangeMm":220,"standardAmp200":"MR-J5-12K_","standardAmp400":"MR-J5-12K_4","cableType":"分離接頭 + 端子台","inertiaLabel":"低慣量・大容量 (11~25kW)","notes":"需外接 DBU 動力制動單元與 GRZG400 外置再生電阻。"},{"model":"HK-JT15K1M(B)J / 4(B)J","series":"HK-JT","voltage":"200V","powerKw":15,"ratedSpeedRpm":1500,"maxSpeedRpm":3000,"ratedTorqueNm":95.5,"maxTorqueNm":286,"flangeMm":220,"standardAmp200":"MR-J5-17K_","standardAmp400":"MR-J5-17K_4","cableType":"分離接頭 + 端子台","inertiaLabel":"低慣量・大容量 (11~25kW)"},{"model":"HK-JT22K1MJ / 4J","series":"HK-JT","voltage":"200V","powerKw":22,"ratedSpeedRpm":1500,"maxSpeedRpm":2500,"ratedTorqueNm":140,"maxTorqueNm":420,"flangeMm":250,"standardAmp200":"MR-J5-25K_","standardAmp400":"MR-J5-25K_4","cableType":"分離接頭 + 端子台 (強制風冷 IP44)","inertiaLabel":"低慣量・超大容量 (22kW)","notes":"附外部強制冷卻風扇 (IP44)，無內建電磁煞車規格。"}],"linearMotors":[{"model":"LM-H4M-0704-HST / 1404 / 2804 / 5704","series":"LM-H4M","coreType":"模組化有鐵芯 (60mm 模組自由拼裝 1~8 顆)","contThrustN":288,"maxThrustN":720,"maxSpeedMs":5,"voltage":"200V","compatibleAmps":"MR-J5-20~350G/B/A · MR-J5W2/W3","cooling":"自然冷卻","primaryLengthMm":240,"secondaryModel":"LM-H4MS30-090-KSS0 (90mm 節距磁軌)","notes":"2025/2026 新世代模組化線性馬達 (72~576N 連續 / 180~1440N 最大)；需 J5 韌體 F0 以上。"},{"model":"LM-H3P2A-07P / 3A-24P / 4A-48P / 5A-96P","series":"LM-H3","coreType":"標準有鐵芯 (高性價比・高推力密度)","contThrustN":240,"maxThrustN":600,"maxSpeedMs":3,"voltage":"200V","compatibleAmps":"MR-J5-20~500G/B/A · MR-J5W2/W3","cooling":"自然冷卻","primaryLengthMm":205,"secondaryModel":"LM-H3S20 / 30 / 40 / 50-*","notes":"涵蓋 70N~960N 連續推力 (最大 175N~2400N)，廣泛應用於搬運與組裝機台。"},{"model":"LM-AJ07 / AJ11 / AJ22 / AJ45","series":"LM-AJ","coreType":"扁平薄型有鐵芯 (低背高・高速最高 6.5 m/s)","contThrustN":170.5,"maxThrustN":454,"maxSpeedMs":5,"voltage":"200V","compatibleAmps":"MR-J5-20~200G / A · MR-J5W2/W3-G (不支援 -B)","cooling":"自然冷卻","primaryLengthMm":165,"secondaryModel":"LM-AJS*-*","notes":"注意：LM-AJ 不支援 MR-J5-B 與 MR-J5W_-B (SSCNET III/H)。"},{"model":"LM-FP2B-06M / 4B-12M / 5D-24M","series":"LM-F","coreType":"高推力有鐵芯 (自然冷卻 / 液冷雙規格)","contThrustN":1200,"maxThrustN":3600,"maxSpeedMs":2,"voltage":"200V","compatibleAmps":"MR-J5-100~700G/B/A (部分提供 400V 規格)","cooling":"自然冷卻 300~1200N / 液冷 600~2400N","primaryLengthMm":360,"secondaryModel":"LM-FS20 / 40 / 50-*","notes":"最大推力可達 7200N，適合大型龍門與工具機重切削軸。"},{"model":"LM-K2P1A-01M / 2C-07M / 3C-14M","series":"LM-K2","coreType":"磁力相消有鐵芯 (淨磁吸力 0 N)","contThrustN":700,"maxThrustN":1750,"maxSpeedMs":2,"voltage":"200V","compatibleAmps":"MR-J5-40~700G/B/A · MR-J5W2/W3","cooling":"自然冷卻","primaryLengthMm":270,"secondaryModel":"雙排對向磁軌 LM-K2S*-* (需 2 組以上)","notes":"大幅降低線軌負載與壽命損耗；二次側磁軌長度計算需以兩倍主線圈考慮。"},{"model":"LM-U2PAB-05M / BB-15M / CB-40M / DB-80M","series":"LM-U2","coreType":"無鐵芯 (零齒槽力・零磁吸力・極致平滑)","contThrustN":200,"maxThrustN":800,"maxSpeedMs":2,"voltage":"200V","compatibleAmps":"MR-J5-20~500G/B/A · MR-J5W2/W3","cooling":"自然冷卻","primaryLengthMm":195,"secondaryModel":"U型磁軌 LM-U2S*-*","notes":"涵蓋 50~800N 連續推力，適合光學檢測、半導體晶圓等無頓挫掃描。"},{"model":"LM-AU03 / AU07 / AU14 / AU25 / AU35","series":"LM-AU","coreType":"精巧高推力無鐵芯 (0.04s 極短整定・最高 4.5 m/s)","contThrustN":140,"maxThrustN":420,"maxSpeedMs":4.5,"voltage":"200V","compatibleAmps":"MR-J5-10~350G / A · MR-J5W2/W3-G (不支援 -B)","cooling":"自然冷卻","primaryLengthMm":140,"secondaryModel":"LM-AUS*-*","notes":"需 J5 韌體 D0 以上；不支援 MR-J5-B 與 MR-J5W_-B (SSCNET III/H)。"}],"directDriveMotors":[{"model":"TM-RG2M002C30 / 004E30 / 009G30","series":"TM-RG2M","outerDiaMm":130,"hollowDiaMm":35,"ratedTorqueNm":4.5,"maxTorqueNm":13.5,"boostMaxTorqueNm":18,"ratedSpeedRpm":300,"maxSpeedRpm":600,"encoderRes":"21-bit / 22-bit","standardAmp":"MR-J5-20_","boostAmp":"MR-J5-40_ (針對 004E30)","notes":"法蘭安裝型 (高精度基準面定位，IP40)；中空徑 φ20~φ40mm。"},{"model":"TM-RU2M002C30 / 004E30 / 009G30","series":"TM-RU2M","outerDiaMm":180,"hollowDiaMm":45,"ratedTorqueNm":9,"maxTorqueNm":27,"ratedSpeedRpm":300,"maxSpeedRpm":600,"encoderRes":"21-bit / 22-bit","standardAmp":"MR-J5-40_","notes":"平台安裝型 (附定位銷孔便於轉盤重複拆裝，IP40)；中空徑 φ20~φ45mm。"},{"model":"TM-RFM002C20 ~ TM-RFM240G10","series":"TM-RFM","outerDiaMm":230,"hollowDiaMm":70,"ratedTorqueNm":48,"maxTorqueNm":144,"ratedSpeedRpm":200,"maxSpeedRpm":400,"encoderRes":"20-bit (1,048,576 p/rev)","standardAmp":"MR-J5-100_ / 200_ (依機種 0.1~5kW)","notes":"高剛性・大轉矩系列 (2~240 N·m 額定 / 最大 720 N·m，φ130~φ330mm，IP42)。須為 2019 年 6 月以後製品。"}],"decoderPresets":[{"id":"amp-j5-g-rj","type":"amplifier","fullCode":"MR-J5-100G4-RJN1","title":"1 軸高機能安全・EtherCAT/EIP 400V 放大器範例","segments":[{"code":"MR-J5","label":"系列名稱","meaning":"三菱電機 MELSERVO-J5 系列 AC 伺服放大器"},{"code":"100","label":"額定容量","meaning":"1.0 kW (10=0.1kW, 20=0.2kW, 40=0.4kW, 60=0.6kW, 70=0.75kW, 100=1kW ... 25K=25kW)"},{"code":"G","label":"指令介面","meaning":"G = CC-Link IE TSN (無 N1) 或乙太網多協定硬體；B = SSCNET III/H；A = 脈衝/類比"},{"code":"4","label":"電源電壓","meaning":"4 = 三相 AC 380~480V (無標示代表 200V 等級)"},{"code":"-RJ","label":"機能擴充","meaning":"追加 CN2L (支援 4 線式/ABZ 全閉環) 與內建安全監視 (STO/SS1/SS2/SOS/SBC/SLS/SSM/SDI/SLI/SLT)"},{"code":"N1","label":"網路協定","meaning":"切換為 EtherCAT (CoE/EoE/FSoE) 與 EtherNet/IP (CIP Safety) 專用機種"}]},{"id":"amp-j5w2-g","type":"amplifier","fullCode":"MR-J5W2-44G","title":"2 軸一體 CC-Link IE TSN 放大器範例","segments":[{"code":"MR-J5W2","label":"多軸架構","meaning":"2 軸一體型 AC 200V 伺服放大器 (W3 為 3 軸一體，寬度僅 75 mm)"},{"code":"4","label":"A 軸容量","meaning":"A 軸 0.4 kW (2=0.2kW, 4=0.4kW, 7=0.75kW, 10=1.0kW)"},{"code":"4","label":"B 軸容量","meaning":"B 軸 0.4 kW (A/B 軸可分別驅動旋轉、線性或直驅馬達)"},{"code":"G","label":"指令介面","meaning":"CC-Link IE TSN (62.5 μs)，另可選 -B (SSCNET III/H) 或 -G-N1 (EtherCAT)"}]},{"id":"amp-j5d-g4","type":"amplifier","fullCode":"MR-J5D2-350350G4","title":"400V 共直流母線 2 軸驅動模組範例","segments":[{"code":"MR-J5D2","label":"驅動模組型式","meaning":"400V 共直流母線 2 軸驅動模組 (需由 MR-CV_4 再生變流器供電；僅限旋轉馬達)"},{"code":"350","label":"A 軸容量","meaning":"A 軸 3.5 kW (可選 100=1kW, 200=2kW, 350=3.5kW, 500=5kW, 700=7kW)"},{"code":"350","label":"B 軸容量","meaning":"B 軸 3.5 kW (配置於變流器右側時，A/B 總容量需依規定由大到小排列)"},{"code":"G4","label":"協定與電壓","meaning":"CC-Link IE TSN 400V (支援全閉環 2 線式；加 -N1 為 EtherCAT/EtherNet/IP)"}]},{"id":"motor-hk-kt","type":"motor","fullCode":"HK-KT43WBJ-G1R","title":"HK 旋轉伺服馬達型號解碼範例","segments":[{"code":"HK-KT","label":"馬達系列","meaning":"KT = 低慣量小容量 (MT=超低慣量高速, ST=中慣量中容量, RT=超低慣量中容量, JT=大容量)"},{"code":"4","label":"額定輸出","meaning":"4 = 0.4 kW (05=50W, 1=0.1kW, 2=0.2kW, 4=0.4kW, 7M=0.75kW, 1M=1.0kW, 15=1.5kW)"},{"code":"3","label":"額定轉速","meaning":"3 = 3000 r/min (2=2000 r/min, 1=1500 r/min, 0=1000 r/min；4 代表 400V 機種接在後面)"},{"code":"W","label":"編碼器規格","meaning":"W = 26-bit (67,108,864 p/rev) 無電池絕對型；V = 10,000 r/min 增量型"},{"code":"B","label":"電磁煞車","meaning":"B = 附 DC24V 保持型電磁煞車 (無標示代表無煞車)"},{"code":"J","label":"軸端形狀","meaning":"J = 鍵槽附螺絲孔標準軸 (無鍵槽直軸不標或為 S 特殊軸)"},{"code":"-G1R","label":"減速機選項","meaning":"G1 = 一般工業用減速機、G5/G7 = 精密低背隙減速機 (附減速機不可用大一階增轉矩)"}]}],"glossary":{"4":{"title":"AC 400V 等級","detail":"輸入三相 AC 380~480V (省去降壓變壓器，適合大型機台與外銷歐洲/北美)。"},"MR-J5":{"title":"伺服放大器本體","detail":"MELSERVO-J5 系列，速度頻寬 3.5 kHz，標配 Maisart AI 機械診斷與振動抑制。"},"MR-J5W2":{"title":"2 軸一體伺服放大器","detail":"單機整合 2 軸 (22/44/77/1010)，共用電源與迴生能源，支援 2 線全閉環。"},"MR-J5W3":{"title":"3 軸一體伺服放大器","detail":"寬度僅 75 mm (222/444)，節省電控盤空間，注意不支援全閉環。"},"MR-J5D1":{"title":"400V 1 軸驅動模組","detail":"共直流母線架構 (1~7 kW)，含 CN2AL 端子支援 4 線式/ABZ 全閉環；限旋轉馬達。"},"MR-J5D2":{"title":"400V 2 軸驅動模組","detail":"共直流母線架構 (1~7 kW×2)，僅支援 2 線式全閉環；限旋轉馬達。"},"MR-J5D3":{"title":"400V 3 軸驅動模組","detail":"共直流母線架構 (1~2 kW×3，寬 60mm)，不支援全閉環；限旋轉馬達。"},"MR-MD333G":{"title":"DC48V 基板型 3 軸模組","detail":"重 0.12 kg、耐振動 39 m/s²，30W×3 軸，適配 HK-KT0536E2-S1 與 HG-AK。"},"G":{"title":"CC-Link IE TSN","detail":"1 Gbps TSN 工業乙太網，最速 31.25 μs，同步與一般 TCP/IP 混合通信。"},"B":{"title":"SSCNET III/H","detail":"光纖高速同步運動網路 (0.222 / 0.444 / 0.888 ms)，高度抗雜訊與既有機台相容。"},"A":{"title":"脈衝 / 類比泛用型","detail":"支援 4 Mpps 差動脈衝、±10V 類比及內建定位表模式。"},"-RJ":{"title":"4線全閉環 + 安全監視","detail":"增加 CN2L 支援 4 線/ABZ 光學尺；支援 STO/SS1/SS2/SOS/SBC/SLS/SSM/SDI/SLI/SLT。"},"-HS":{"title":"獨立安全 DI/DO (Cat.4 PLe)","detail":"CN3 直接提供 3 系統安全 I/O + CN7 ABZ 輸出 + CN2L，無需安全 PLC。"},"-N1":{"title":"EtherCAT / EtherNet/IP","detail":"切換為 EtherCAT (CoE/EoE/FSoE) 與 EIP (CIP Safety)；不支援押付與驅動器間通信。"},"-LL":{"title":"壓力控制專用型","detail":"支援 0~10V 類比壓力回授，適合射出成形/壓合；不支援全閉環、LM 與 TM 馬達。"},"-ED":{"title":"無內建動力制動 (DB)","detail":"取消動態制動迴路之特規訂製品。"},"-PX":{"title":"無內建再生電阻","detail":"取消內部標準再生電阻，完全依賴外部再生方案之特規。"}},"rotaryDimensions":[{"id":"hk-kt053","model":"HK-KT053W(B)J","series":"HK-KT","voltage":"200V","powerKw":0.05,"ratedSpeedRpm":3000,"flangeLC":40,"bodyL":55.5,"bodyLBrake":90.5,"connKL":42.8,"connKLBrake":77.8,"shaftDiaS":8,"shaftTolerance":"0 / -0.009","shaftLenLR":25,"pilotDiaLB":30,"pcdLA":46,"mountHole":"2×φ4.5","flangeThickLE":5,"keywaySpec":"W=3, U=1.8 (帶鍵槽選件 K/N)","ipRating":"IP67","catalogPage":311,"notes":"單接頭設計，標配 26-bit 無電池絕對型編碼器。"},{"id":"hk-kt0536e2","model":"HK-KT0536E2-S1","series":"HK-KT","voltage":"48V","powerKw":0.05,"ratedSpeedRpm":3000,"flangeLC":40,"bodyL":55.5,"bodyLBrake":90.5,"connKL":42.8,"connKLBrake":77.8,"shaftDiaS":8,"shaftTolerance":"0 / -0.009","shaftLenLR":25,"pilotDiaLB":30,"pcdLA":46,"mountHole":"2×φ4.5","flangeThickLE":5,"keywaySpec":"直軸 (不附油封)","ipRating":"IP67 (無油封)","catalogPage":311,"notes":"DC 48V 專用，搭配 MR-MD333G 基板型 3 軸驅動模組。"},{"id":"hk-kt13","model":"HK-KT13W(B)J","series":"HK-KT","voltage":"200V","powerKw":0.1,"ratedSpeedRpm":3000,"flangeLC":40,"bodyL":68,"bodyLBrake":103,"connKL":55.3,"connKLBrake":90.3,"shaftDiaS":8,"shaftTolerance":"0 / -0.009","shaftLenLR":25,"pilotDiaLB":30,"pcdLA":46,"mountHole":"2×φ4.5","flangeThickLE":5,"keywaySpec":"W=3, QK=14, M3×8","ipRating":"IP67","catalogPage":311},{"id":"hk-kt1m3","model":"HK-KT1M3W(B)J","series":"HK-KT","voltage":"200V","powerKw":0.15,"ratedSpeedRpm":3000,"flangeLC":40,"bodyL":80.5,"bodyLBrake":115.5,"connKL":67.8,"connKLBrake":102.8,"shaftDiaS":8,"shaftTolerance":"0 / -0.009","shaftLenLR":25,"pilotDiaLB":30,"pcdLA":46,"mountHole":"2×φ4.5","flangeThickLE":5,"keywaySpec":"W=3, QK=14, M3×8","ipRating":"IP67","catalogPage":311},{"id":"hk-kt23","model":"HK-KT23W(B)J","series":"HK-KT","voltage":"200V","powerKw":0.2,"ratedSpeedRpm":3000,"flangeLC":60,"bodyL":67.5,"bodyLBrake":102.1,"connKL":55.8,"connKLBrake":90.4,"shaftDiaS":14,"shaftTolerance":"0 / -0.011","shaftLenLR":30,"pilotDiaLB":50,"pcdLA":70,"mountHole":"4×φ5.5","flangeThickLE":7,"keywaySpec":"W=5, QK=20, U=3, M4×15","ipRating":"IP67","catalogPage":312},{"id":"hk-kt43","model":"HK-KT43(4)W(B)J","series":"HK-KT","voltage":"200V","powerKw":0.4,"ratedSpeedRpm":3000,"flangeLC":60,"bodyL":85.5,"bodyLBrake":120.1,"connKL":73.8,"connKLBrake":108.4,"shaftDiaS":14,"shaftTolerance":"0 / -0.011","shaftLenLR":30,"pilotDiaLB":50,"pcdLA":70,"mountHole":"4×φ5.5","flangeThickLE":7,"keywaySpec":"W=5, QK=20, U=3, M4×15","ipRating":"IP67","catalogPage":312,"notes":"200V (HK-KT43WJ) 與 400V (HK-KT434WJ) 外形尺寸相同。"},{"id":"hk-kt63","model":"HK-KT63(4)W(B)J","series":"HK-KT","voltage":"200V","powerKw":0.6,"ratedSpeedRpm":3000,"flangeLC":60,"bodyL":103.5,"bodyLBrake":138.1,"connKL":91.8,"connKLBrake":126.4,"shaftDiaS":14,"shaftTolerance":"0 / -0.011","shaftLenLR":30,"pilotDiaLB":50,"pcdLA":70,"mountHole":"4×φ5.5","flangeThickLE":7,"keywaySpec":"W=5, QK=20, U=3, M4×15","ipRating":"IP67","catalogPage":312},{"id":"hk-kt7m3","model":"HK-KT7M3(4)W(B)J","series":"HK-KT","voltage":"200V","powerKw":0.75,"ratedSpeedRpm":3000,"flangeLC":80,"bodyL":92.5,"bodyLBrake":128,"connKL":80.8,"connKLBrake":116.3,"shaftDiaS":19,"shaftTolerance":"0 / -0.013","shaftLenLR":40,"pilotDiaLB":70,"pcdLA":90,"mountHole":"4×φ6.6","flangeThickLE":8,"keywaySpec":"W=6, QK=25, M5×15","ipRating":"IP67","catalogPage":313},{"id":"hk-kt103","model":"HK-KT103(4)W(B)J","series":"HK-KT","voltage":"200V","powerKw":1,"ratedSpeedRpm":3000,"flangeLC":80,"bodyL":101.5,"bodyLBrake":137,"connKL":89.8,"connKLBrake":125.3,"shaftDiaS":19,"shaftTolerance":"0 / -0.013","shaftLenLR":40,"pilotDiaLB":70,"pcdLA":90,"mountHole":"4×φ6.6","flangeThickLE":8,"keywaySpec":"W=6, QK=25, M5×15","ipRating":"IP67","catalogPage":313},{"id":"hk-kt153","model":"HK-KT153(4)W(B)J","series":"HK-KT","voltage":"200V","powerKw":1.5,"ratedSpeedRpm":3000,"flangeLC":90,"bodyL":118.9,"bodyLBrake":158.3,"connKL":107.2,"connKLBrake":146.6,"shaftDiaS":19,"shaftTolerance":"0 / -0.013","shaftLenLR":40,"pilotDiaLB":80,"pcdLA":100,"mountHole":"4×φ6.6","flangeThickLE":10,"keywaySpec":"W=6, QK=25, M5×15","ipRating":"IP67","catalogPage":313},{"id":"hk-kt202","model":"HK-KT202(4)W(B)J","series":"HK-KT","voltage":"200V","powerKw":2,"ratedSpeedRpm":2000,"flangeLC":90,"bodyL":172.9,"bodyLBrake":212.3,"connKL":161.2,"connKLBrake":200.6,"shaftDiaS":19,"shaftTolerance":"0 / -0.013","shaftLenLR":40,"pilotDiaLB":80,"pcdLA":100,"mountHole":"4×φ6.6","flangeThickLE":10,"keywaySpec":"W=6, QK=25, M5×15","ipRating":"IP67","catalogPage":313,"notes":"另有 3000 r/min 版本 HK-KT203W(B)J，機長 L=136.9 (附煞車 176.3 mm)。"},{"id":"hk-mt13","model":"HK-MT13(V)W(B)J","series":"HK-MT","voltage":"200V","powerKw":0.1,"ratedSpeedRpm":3000,"flangeLC":40,"bodyL":74.8,"bodyLBrake":109.8,"connKL":62.1,"connKLBrake":97.1,"shaftDiaS":8,"shaftTolerance":"0 / -0.009","shaftLenLR":25,"pilotDiaLB":30,"pcdLA":46,"mountHole":"2×φ4.5","flangeThickLE":5,"keywaySpec":"W=3, QK=14, M3×8","ipRating":"IP67","catalogPage":329,"notes":"超低慣量；V 型最高轉速達 10,000 r/min (26-bit 增量編碼器)。"},{"id":"hk-mt23","model":"HK-MT23(V)W(B)J","series":"HK-MT","voltage":"200V","powerKw":0.2,"ratedSpeedRpm":3000,"flangeLC":60,"bodyL":76.6,"bodyLBrake":111.2,"connKL":64.9,"connKLBrake":99.5,"shaftDiaS":14,"shaftTolerance":"0 / -0.011","shaftLenLR":30,"pilotDiaLB":50,"pcdLA":70,"mountHole":"4×φ5.5","flangeThickLE":7,"keywaySpec":"W=5, QK=20, U=3, M4×15","ipRating":"IP67","catalogPage":329},{"id":"hk-mt43","model":"HK-MT43(V)W(B)J","series":"HK-MT","voltage":"200V","powerKw":0.4,"ratedSpeedRpm":3000,"flangeLC":60,"bodyL":96.1,"bodyLBrake":130.7,"connKL":84.4,"connKLBrake":119,"shaftDiaS":14,"shaftTolerance":"0 / -0.011","shaftLenLR":30,"pilotDiaLB":50,"pcdLA":70,"mountHole":"4×φ5.5","flangeThickLE":7,"keywaySpec":"W=5, QK=20, U=3, M4×15","ipRating":"IP67","catalogPage":329},{"id":"hk-mt7m3","model":"HK-MT7M3(V)W(B)J","series":"HK-MT","voltage":"200V","powerKw":0.75,"ratedSpeedRpm":3000,"flangeLC":80,"bodyL":110,"bodyLBrake":145.5,"connKL":98.3,"connKLBrake":133.8,"shaftDiaS":19,"shaftTolerance":"0 / -0.013","shaftLenLR":40,"pilotDiaLB":70,"pcdLA":90,"mountHole":"4×φ6.6","flangeThickLE":8,"keywaySpec":"W=6, QK=25, M5×15","ipRating":"IP67","catalogPage":330},{"id":"hk-mt103","model":"HK-MT103(V)W(B)J","series":"HK-MT","voltage":"200V","powerKw":1,"ratedSpeedRpm":3000,"flangeLC":80,"bodyL":129.5,"bodyLBrake":165,"connKL":117.8,"connKLBrake":153.3,"shaftDiaS":19,"shaftTolerance":"0 / -0.013","shaftLenLR":40,"pilotDiaLB":70,"pcdLA":90,"mountHole":"4×φ6.6","flangeThickLE":8,"keywaySpec":"W=6, QK=25, M5×15","ipRating":"IP67","catalogPage":330},{"id":"hk-st52","model":"HK-ST52(4)W(B)J","series":"HK-ST","voltage":"200V","powerKw":0.5,"ratedSpeedRpm":2000,"flangeLC":130,"bodyL":115.5,"bodyLBrake":150,"connKL":59.8,"connKLBrake":59.8,"shaftDiaS":24,"shaftTolerance":"0 / -0.013","shaftLenLR":55,"pilotDiaLB":110,"pcdLA":165,"mountHole":"4×φ9","flangeThickLE":12,"keywaySpec":"W=8, QK=36, U=4, M8×20","ipRating":"IP67","catalogPage":350,"notes":"中慣量高剛性法蘭 □130mm，採 Push-Turn 分離接頭。"},{"id":"hk-st102","model":"HK-ST102(4)W(B)J","series":"HK-ST","voltage":"200V","powerKw":1,"ratedSpeedRpm":2000,"flangeLC":130,"bodyL":126.5,"bodyLBrake":161,"connKL":70.8,"connKLBrake":70.8,"shaftDiaS":24,"shaftTolerance":"0 / -0.013","shaftLenLR":55,"pilotDiaLB":110,"pcdLA":165,"mountHole":"4×φ9","flangeThickLE":12,"keywaySpec":"W=8, QK=36, U=4, M8×20","ipRating":"IP67","catalogPage":350},{"id":"hk-st202","model":"HK-ST202(4)W(B)J","series":"HK-ST","voltage":"200V","powerKw":2,"ratedSpeedRpm":2000,"flangeLC":176,"bodyL":138.5,"bodyLBrake":188,"connKL":80.7,"connKLBrake":80.7,"shaftDiaS":35,"shaftTolerance":"+0.010 / 0","shaftLenLR":79,"pilotDiaLB":114.3,"pcdLA":200,"mountHole":"4×φ13.5","flangeThickLE":18,"keywaySpec":"W=10, QK=55, M8×20","ipRating":"IP67","catalogPage":351},{"id":"hk-st352","model":"HK-ST352(4)W(B)J","series":"HK-ST","voltage":"200V","powerKw":3.5,"ratedSpeedRpm":2000,"flangeLC":176,"bodyL":158.5,"bodyLBrake":208,"connKL":100.7,"connKLBrake":100.7,"shaftDiaS":35,"shaftTolerance":"+0.010 / 0","shaftLenLR":79,"pilotDiaLB":114.3,"pcdLA":200,"mountHole":"4×φ13.5","flangeThickLE":18,"keywaySpec":"W=10, QK=55, M8×20","ipRating":"IP67","catalogPage":351,"notes":"頂部附 M8 吊環螺栓孔。"},{"id":"hk-st502","model":"HK-ST502(4)W(B)J","series":"HK-ST","voltage":"200V","powerKw":5,"ratedSpeedRpm":2000,"flangeLC":176,"bodyL":178.5,"bodyLBrake":228,"connKL":120.7,"connKLBrake":120.7,"shaftDiaS":35,"shaftTolerance":"+0.010 / 0","shaftLenLR":79,"pilotDiaLB":114.3,"pcdLA":200,"mountHole":"4×φ13.5","flangeThickLE":18,"keywaySpec":"W=10, QK=55, M8×20","ipRating":"IP67","catalogPage":351},{"id":"hk-st702","model":"HK-ST702(4)W(B)J","series":"HK-ST","voltage":"200V","powerKw":7,"ratedSpeedRpm":2000,"flangeLC":176,"bodyL":218.5,"bodyLBrake":268,"connKL":160.7,"connKLBrake":160.7,"shaftDiaS":35,"shaftTolerance":"+0.010 / 0","shaftLenLR":79,"pilotDiaLB":114.3,"pcdLA":200,"mountHole":"4×φ13.5","flangeThickLE":18,"keywaySpec":"W=10, QK=55, M8×20","ipRating":"IP67","catalogPage":351},{"id":"hk-rt103","model":"HK-RT103(4)W(B)J","series":"HK-RT","voltage":"200V","powerKw":1,"ratedSpeedRpm":3000,"flangeLC":90,"bodyL":118.9,"bodyLBrake":158.3,"connKL":107.2,"connKLBrake":146.6,"shaftDiaS":19,"shaftTolerance":"0 / -0.013","shaftLenLR":40,"pilotDiaLB":80,"pcdLA":100,"mountHole":"4×φ6.6","flangeThickLE":10,"keywaySpec":"W=6, QK=25, M5×15","ipRating":"IP67","catalogPage":371},{"id":"hk-rt203","model":"HK-RT203(4)W(B)J","series":"HK-RT","voltage":"200V","powerKw":2,"ratedSpeedRpm":3000,"flangeLC":90,"bodyL":172.9,"bodyLBrake":212.3,"connKL":161.2,"connKLBrake":200.6,"shaftDiaS":19,"shaftTolerance":"0 / -0.013","shaftLenLR":40,"pilotDiaLB":80,"pcdLA":100,"mountHole":"4×φ6.6","flangeThickLE":10,"keywaySpec":"W=6, QK=25, M5×15","ipRating":"IP67","catalogPage":371},{"id":"hk-rt353","model":"HK-RT353(4)W(B)J","series":"HK-RT","voltage":"200V","powerKw":3.5,"ratedSpeedRpm":3000,"flangeLC":130,"bodyL":213,"bodyLBrake":247.5,"connKL":153.4,"connKLBrake":153.4,"shaftDiaS":24,"shaftTolerance":"0 / -0.013","shaftLenLR":55,"pilotDiaLB":110,"pcdLA":165,"mountHole":"4×φ9","flangeThickLE":12,"keywaySpec":"W=8, QK=36, M8×20","ipRating":"IP67","catalogPage":372},{"id":"hk-rt503","model":"HK-RT503(4)W(B)J","series":"HK-RT","voltage":"200V","powerKw":5,"ratedSpeedRpm":3000,"flangeLC":130,"bodyL":267,"bodyLBrake":301.5,"connKL":207.4,"connKLBrake":207.4,"shaftDiaS":24,"shaftTolerance":"0 / -0.013","shaftLenLR":55,"pilotDiaLB":110,"pcdLA":165,"mountHole":"4×φ9","flangeThickLE":12,"keywaySpec":"W=8, QK=36, M8×20","ipRating":"IP67","catalogPage":372},{"id":"hk-rt703","model":"HK-RT703(4)W(B)J","series":"HK-RT","voltage":"200V","powerKw":7,"ratedSpeedRpm":3000,"flangeLC":130,"bodyL":306,"bodyLBrake":340.5,"connKL":246.4,"connKLBrake":246.4,"shaftDiaS":24,"shaftTolerance":"0 / -0.013","shaftLenLR":55,"pilotDiaLB":110,"pcdLA":165,"mountHole":"4×φ9","flangeThickLE":12,"keywaySpec":"W=8, QK=36, M8×20","ipRating":"IP67","catalogPage":372},{"id":"hk-jt701m","model":"HK-JT701M(4)(B)J","series":"HK-JT","voltage":"200V","powerKw":7,"ratedSpeedRpm":1500,"flangeLC":220,"bodyL":295,"bodyLBrake":367.5,"connKL":225.5,"connKLBrake":225.5,"shaftDiaS":42,"shaftTolerance":"0 / -0.016","shaftLenLR":85,"pilotDiaLB":200,"pcdLA":235,"mountHole":"4×φ13.5","flangeThickLE":20,"keywaySpec":"W=12, M10 吊環螺栓孔","ipRating":"IP67","catalogPage":380},{"id":"hk-jt11k1m","model":"HK-JT11K1M(4)(B)J","series":"HK-JT","voltage":"200V","powerKw":11,"ratedSpeedRpm":1500,"flangeLC":220,"bodyL":335,"bodyLBrake":407.5,"connKL":265.5,"connKLBrake":265.5,"shaftDiaS":55,"shaftTolerance":"+0.030 / +0.011","shaftLenLR":116,"pilotDiaLB":200,"pcdLA":235,"mountHole":"4×φ13.5","flangeThickLE":20,"keywaySpec":"W=16, M10 吊環螺栓孔","ipRating":"IP67","catalogPage":380,"notes":"11kW 大容量，須搭配外置 DBU 動力制動單元與 GRZG400 再生電阻。"},{"id":"hk-jt15k1m","model":"HK-JT15K1M(4)(B)J","series":"HK-JT","voltage":"200V","powerKw":15,"ratedSpeedRpm":1500,"flangeLC":220,"bodyL":435,"bodyLBrake":507.5,"connKL":365.5,"connKLBrake":365.5,"shaftDiaS":55,"shaftTolerance":"+0.030 / +0.011","shaftLenLR":116,"pilotDiaLB":200,"pcdLA":235,"mountHole":"4×φ13.5","flangeThickLE":20,"keywaySpec":"W=16, M10 吊環螺栓孔","ipRating":"IP67","catalogPage":380},{"id":"hk-jt22k1m","model":"HK-JT22K1M(4)J","series":"HK-JT","voltage":"200V","powerKw":22,"ratedSpeedRpm":1500,"flangeLC":250,"bodyL":476,"bodyLBrake":null,"connKL":229,"connKLBrake":null,"shaftDiaS":65,"shaftTolerance":"+0.030 / +0.011","shaftLenLR":140,"pilotDiaLB":230,"pcdLA":265,"mountHole":"4×φ24","flangeThickLE":24,"keywaySpec":"W=18, 端子箱 U/V/W M10 螺絲，M12 吊環孔","ipRating":"IP44 (強制風冷)","catalogPage":381,"notes":"22 kW 附外部強制冷卻風扇 (IP44)，無內建電磁煞車規格；LT 端子箱距法蘭 174 mm。"}],"linearDimensions":[{"id":"lm-h4m-28","model":"LM-H4MP3D-28T-KSS0 (4模組 / 288N)","series":"LM-H4M","coreType":"模組化有鐵芯 (1~8 顆 60mm 模組可拼裝)","contThrustN":288,"maxThrustN":720,"primaryL":250,"primaryW":60,"primaryH":37,"coilPitchMm":60,"mountBolts":"8×M4 螺紋孔","secondaryModel":"LM-H4MS30-090-KSS0","secondaryPitchMm":90,"secondaryW":54,"secondaryH":10,"airGapMm":0.7,"catalogPage":415,"notes":"1~8 模組一次側長度依序為 70 / 130 / 190 / 250 / 310 / 370 / 430 / 490 mm。"},{"id":"lm-h3-24","model":"LM-H3P3B-24P-CSS0 (240N)","series":"LM-H3","coreType":"標準有鐵芯對置型","contThrustN":240,"maxThrustN":600,"primaryL":224,"primaryW":70,"primaryH":43,"coilPitchMm":64,"mountBolts":"6×M5 深度 9mm","secondaryModel":"LM-H3S30-384-CSS0","secondaryPitchMm":384,"secondaryW":60,"secondaryH":12,"airGapMm":0.8,"catalogPage":417,"notes":"同系列 P3A/P3B/P3C/P3D 一次側長度依序為 128 / 224 / 320 / 416 mm。"},{"id":"lm-aj-22","model":"LM-AJ22 / LM-AJP3B (薄型高速)","series":"LM-AJ","coreType":"薄型低背高有鐵芯 (Max 6.5 m/s)","contThrustN":170.5,"maxThrustN":454,"primaryL":165,"primaryW":60,"primaryH":29,"coilPitchMm":45,"mountBolts":"6×M4","secondaryModel":"LM-AJS30-*","secondaryPitchMm":180,"secondaryW":54,"secondaryH":9,"airGapMm":0.7,"catalogPage":420,"notes":"總組裝高度僅 29 mm，不支援 SSCNET III/H (-B) 放大器。"},{"id":"lm-f-12","model":"LM-FP4B-12M-1SS0 (高推力 1200N)","series":"LM-F","coreType":"重載高推力有鐵芯 (自冷/液冷)","contThrustN":1200,"maxThrustN":3600,"primaryL":360,"primaryW":150,"primaryH":72,"coilPitchMm":90,"mountBolts":"10×M8","secondaryModel":"LM-FS40-480-1SS0","secondaryPitchMm":480,"secondaryW":140,"secondaryH":18,"airGapMm":1,"catalogPage":423,"notes":"液冷模式連續推力可達 2400 N，適合大型龍門重切削。"},{"id":"lm-k2-07","model":"LM-K2P2C-07M-1SS0 (磁力相消 700N)","series":"LM-K2","coreType":"雙排對向磁力相消有鐵芯 (淨吸力 0 N)","contThrustN":700,"maxThrustN":1750,"primaryL":270,"primaryW":112,"primaryH":64,"coilPitchMm":60,"mountBolts":"8×M6","secondaryModel":"LM-K2S20-360-1SS0 (雙排)","secondaryPitchMm":360,"secondaryW":96,"secondaryH":15,"airGapMm":0.9,"catalogPage":425,"notes":"需上下或左右雙排對向配置二次側磁軌，大幅延長線軌壽命。"},{"id":"lm-u2-15","model":"LM-U2PBB-15M-1SS0 (無鐵芯 200N)","series":"LM-U2","coreType":"U 型無鐵芯 (零齒槽力・零磁吸力)","contThrustN":200,"maxThrustN":800,"primaryL":195,"primaryW":66,"primaryH":52,"coilPitchMm":45,"mountBolts":"6×M5","secondaryModel":"LM-U2SB0-360-1SS0 (U型槽)","secondaryPitchMm":360,"secondaryW":54,"secondaryH":40,"airGapMm":0.7,"catalogPage":427,"notes":"線圈插置於 U 型磁軌溝槽內，完全無齒槽頓挫，適合精密掃描。"},{"id":"lm-au-11","model":"LM-AUP3D-11R-JSS0 (精巧無鐵芯)","series":"LM-AU","coreType":"小型高速無鐵芯 (Max 4.5 m/s)","contThrustN":140,"maxThrustN":420,"primaryL":241,"primaryW":48,"primaryH":40,"coilPitchMm":40,"mountBolts":"6×M4","secondaryModel":"LM-AUS30-*","secondaryPitchMm":180,"secondaryW":40,"secondaryH":30,"airGapMm":0.6,"catalogPage":430,"notes":"需 J5 放大器韌體 D0 以上；不支援 MR-J5-B (SSCNET III/H)。"}],"directDriveDimensions":[{"id":"tm-rg2m-002","model":"TM-RG2M002C30","series":"TM-RG2M","ratedTorqueNm":2.2,"maxTorqueNm":8.8,"outerDiaD":130,"flangeSq":130,"hollowDia":20,"heightL":49,"rotorPcd":50,"basePcd":150,"mountHoles":"4×φ9","rotorTap":"6×M5 深度 8","ipRating":"IP40","catalogPage":449,"notes":"薄型法蘭安裝，定位止口 φ128h7。"},{"id":"tm-rg2m-004","model":"TM-RG2M004E30","series":"TM-RG2M","ratedTorqueNm":4.5,"maxTorqueNm":13.5,"outerDiaD":180,"flangeSq":180,"hollowDia":47,"heightL":51,"rotorPcd":86,"basePcd":205,"mountHoles":"4×φ14","rotorTap":"6×M5 深度 8","ipRating":"IP40","catalogPage":449,"notes":"改搭 MR-J5-40 放大器可增轉矩至額定 6 / 最大 18 N·m。"},{"id":"tm-rg2m-009","model":"TM-RG2M009G30","series":"TM-RG2M","ratedTorqueNm":9,"maxTorqueNm":27,"outerDiaD":230,"flangeSq":230,"hollowDia":62,"heightL":49,"rotorPcd":147,"basePcd":260,"mountHoles":"4×φ14","rotorTap":"6×M5 深度 8","ipRating":"IP40","catalogPage":450,"notes":"法蘭安裝型，外徑 φ230 mm、大中空徑 φ62 mm，定位止口 φ228h7。"},{"id":"tm-ru2m-004","model":"TM-RU2M004E30","series":"TM-RU2M","ratedTorqueNm":4.5,"maxTorqueNm":13.5,"outerDiaD":180,"flangeSq":180,"hollowDia":47,"heightL":56,"rotorPcd":86,"basePcd":205,"mountHoles":"4×φ14 + 2×φ6H7 銷孔","rotorTap":"6×M5 深度 8","ipRating":"IP40","catalogPage":450,"notes":"平台安裝型，附 2×φ6H7 定位銷孔方便重複拆裝治具。"},{"id":"tm-rfm-006c","model":"TM-RFM006C20","series":"TM-RFM","ratedTorqueNm":6,"maxTorqueNm":18,"outerDiaD":130,"flangeSq":130,"hollowDia":20,"heightL":92.5,"rotorPcd":50,"basePcd":150,"mountHoles":"4×φ9","rotorTap":"6×M5 深度 8","ipRating":"IP42","catalogPage":452,"notes":"同外徑 002C20 / 004C20 / 006C20 高度 L 為 58.5 / 75.5 / 92.5 mm。"},{"id":"tm-rfm-018e","model":"TM-RFM018E20","series":"TM-RFM","ratedTorqueNm":18,"maxTorqueNm":54,"outerDiaD":180,"flangeSq":180,"hollowDia":47,"heightL":104,"rotorPcd":90,"basePcd":205,"mountHoles":"4×φ14","rotorTap":"6×M5 深度 8","ipRating":"IP42","catalogPage":452,"notes":"同外徑 006E20 / 012E20 / 018E20 高度 L 為 62 / 83 / 104 mm。"},{"id":"tm-rfm-048g","model":"TM-RFM048G20","series":"TM-RFM","ratedTorqueNm":48,"maxTorqueNm":144,"outerDiaD":230,"flangeSq":230,"hollowDia":62,"heightL":144,"rotorPcd":120,"basePcd":260,"mountHoles":"4×φ14","rotorTap":"6×M6 深度 10","ipRating":"IP42","catalogPage":453,"notes":"同外徑 012G20 / 048G20 / 072G20 高度 L 為 69 / 144 / 194 mm。"},{"id":"tm-rfm-240j","model":"TM-RFM240J10","series":"TM-RFM","ratedTorqueNm":240,"maxTorqueNm":720,"outerDiaD":330,"flangeSq":330,"hollowDia":104,"heightL":273.5,"rotorPcd":180,"basePcd":370,"mountHoles":"4×φ18","rotorTap":"6×M8 深度 13","ipRating":"IP42","catalogPage":453,"notes":"同外徑 040J10 / 120J10 / 240J10 高度 L 為 88.5 / 162.5 / 273.5 mm。"}],"initialCriteria":{"motorCategory":"rotary","powerSupply":"3p-200v","protocol":"cc-link-tsn","topology":"1-axis","axesCount":4,"safety":"sto","feedback":"semi-closed","holdingBrake":false,"rotaryInertia":"medium-inertia","targetPowerKw":7,"torqueBoost":false,"linearType":"iron-core-modular","targetThrustN":240,"strokeMm":500,"ddMounting":"flange","targetDdTorqueNm":4.5,"ddAbsolute":true}};
+    let state = Object.assign({}, DATA.initialCriteria);
+    let currentTab = 'wizard';
+    let currentSpec = 'amplifiers';
+    let activePresetIdx = 0;
+
+    let dimState = {
+      category: 'rotary',
+      series: 'ALL',
+      powerKw: 'ALL',
+      keyword: '',
+      withBrake: false,
+      strokeMm: 500,
+      selectedRotaryId: DATA.rotaryDimensions[2] ? DATA.rotaryDimensions[2].id : DATA.rotaryDimensions[0].id,
+      selectedLinearId: DATA.linearDimensions[0].id,
+      selectedDdId: DATA.directDriveDimensions[0].id
+    };
+
+    function esc(s) {
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function switchTab(tab) {
+      currentTab = tab;
+      ['wizard','dimensions','specs','decoder'].forEach(t => {
+        document.getElementById('tab-' + t).classList.toggle('hidden', t !== tab);
+      });
+      document.querySelectorAll('[data-tab]').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-tab') === tab);
+      });
+      const titles = {
+        wizard: 'SV J5 互動式選型精靈',
+        dimensions: 'MELSERVO-J5 馬達外形尺寸圖',
+        specs: 'MELSERVO-J5 規格矩陣總覽',
+        decoder: '型號編碼與尾碼解析'
+      };
+      document.getElementById('page-title').textContent = titles[tab];
+      if (tab === 'dimensions') renderDimensions();
+    }
+
+    function openDimensionFor(cat, modelKeyword, powerKw, withBrake, strokeMm) {
+      dimState.category = cat || 'rotary';
+      dimState.series = 'ALL';
+      dimState.powerKw = 'ALL';
+      dimState.keyword = '';
+      if (typeof withBrake === 'boolean') dimState.withBrake = withBrake;
+      if (typeof strokeMm === 'number' && strokeMm >= 50) dimState.strokeMm = strokeMm;
+      const kw = (modelKeyword || '').toUpperCase().replace(/\(B\)/g, '').replace(/B/g, '');
+      if (dimState.category === 'rotary') {
+        const hit =
+          DATA.rotaryDimensions.find(d => kw && d.model.toUpperCase().includes(kw.slice(0, 9))) ||
+          (typeof powerKw === 'number' ? DATA.rotaryDimensions.find(d => Math.abs(d.powerKw - powerKw) < 0.01) : null) ||
+          DATA.rotaryDimensions[0];
+        if (hit) {
+          dimState.selectedRotaryId = hit.id;
+          dimState.series = hit.series;
+        }
+      } else if (dimState.category === 'linear') {
+        const hit = DATA.linearDimensions.find(d => kw && (d.series.toUpperCase().includes(kw) || kw.includes(d.series.toUpperCase()))) || DATA.linearDimensions[0];
+        if (hit) dimState.selectedLinearId = hit.id;
+      } else {
+        const hit = DATA.directDriveDimensions.find(d => kw && (d.series.toUpperCase().includes(kw) || kw.includes(d.series.toUpperCase()))) || DATA.directDriveDimensions[0];
+        if (hit) dimState.selectedDdId = hit.id;
+      }
+      switchTab('dimensions');
+    }
+
+    function updateState(k, v) {
+      state[k] = v;
+      if (k === 'powerSupply' && v === '3p-400v' && (state.topology === '2-axis' || state.topology === '3-axis' || state.topology === 'common-bus-200v')) {
+        state.topology = '1-axis';
+      }
+      if (k === 'powerSupply' && v !== '3p-400v' && state.topology === 'dc-bus-400v') {
+        state.topology = '1-axis';
+      }
+      if (k === 'powerSupply' && v === 'dc-48v') {
+        state.motorCategory = 'rotary';
+        state.topology = '3-axis';
+        state.axesCount = 3;
+        if (state.protocol !== 'cc-link-tsn' && state.protocol !== 'ethercat') {
+          state.protocol = 'cc-link-tsn';
+        }
+      }
+      if (k === 'targetPowerKw' && typeof v === 'number') {
+        if (v >= 11.0 && state.rotaryInertia !== 'large-capacity') {
+          state.rotaryInertia = 'large-capacity';
+        } else if (v < 11.0 && state.rotaryInertia === 'large-capacity') {
+          state.rotaryInertia = v > 2.0 ? 'medium-inertia' : 'low-inertia';
+        }
+      }
+      if (k === 'rotaryInertia' && v === 'large-capacity' && state.targetPowerKw < 11.0) {
+        state.targetPowerKw = 11.0;
+      }
+      renderWizard();
+    }
+
+    function fmtCap(kw) {
+      if (kw <= 0.1) return '10';
+      if (kw <= 0.2) return '20';
+      if (kw <= 0.4) return '40';
+      if (kw <= 0.6) return '60';
+      if (kw <= 0.75) return '70';
+      if (kw <= 1.0) return '100';
+      if (kw <= 2.0) return '200';
+      if (kw <= 3.5) return '350';
+      if (kw <= 5.0) return '500';
+      if (kw <= 7.0) return '700';
+      if (kw <= 11.0) return '12K';
+      if (kw <= 15.0) return '17K';
+      return '25K';
+    }
+
+    function fmtCapD400(kw) {
+      if (kw <= 1.0) return '100';
+      if (kw <= 2.0) return '200';
+      if (kw <= 3.5) return '350';
+      if (kw <= 5.0) return '500';
+      return '700';
+    }
+
+    function selectConverter400V(totalKw) {
+      if (totalKw <= 11) return 'MR-CV11K4';
+      if (totalKw <= 18.5) return 'MR-CV18K4';
+      if (totalKw <= 30) return 'MR-CV30K4';
+      if (totalKw <= 37) return 'MR-CV37K4';
+      if (totalKw <= 45) return 'MR-CV45K4';
+      if (totalKw <= 55) return 'MR-CV55K4';
+      return 'MR-CV75K4';
+    }
+
+    function estimateKva(kw) {
+      if (kw <= 0.1) return '約 0.3 kVA / 軸';
+      if (kw <= 0.2) return '約 0.5 kVA / 軸';
+      if (kw <= 0.4) return '約 0.9 kVA / 軸';
+      if (kw <= 0.6) return '約 1.1 kVA / 軸';
+      if (kw <= 0.75) return '約 1.3 kVA / 軸';
+      if (kw <= 1.0) return '約 1.7 kVA / 軸';
+      if (kw <= 2.0) return '約 3.5 kVA / 軸';
+      if (kw <= 3.5) return '約 5.5 kVA / 軸';
+      if (kw <= 5.0) return '約 7.5 kVA / 軸';
+      if (kw <= 7.0) return '約 10.0 kVA / 軸';
+      if (kw <= 11.0) return '約 16.0 kVA / 軸';
+      if (kw <= 15.0) return '約 22.0 kVA / 軸';
+      return '約 33.0 kVA / 軸';
+    }
+
+    function allocateAmplifiers(opts) {
+      const c = opts.criteria;
+      const axes = Math.max(1, Math.floor(c.axesCount));
+      const is400 = c.powerSupply === '3p-400v';
+      const vCode = is400 ? '4' : '';
+      const protoMap = { 'cc-link-tsn':'G', 'ethercat':'G', 'ethernet-ip':'G', 'sscnet':'B', 'pulse-analog':'A' };
+      const protoCode = protoMap[c.protocol] || 'G';
+      const isN1 = c.protocol === 'ethercat' || c.protocol === 'ethernet-ip';
+      const needRJ = c.safety === 'advanced-safety' || c.feedback === 'full-closed-4wire-abz';
+      const needHS = c.safety === 'standalone-hs';
+      let suffix = '';
+      if (c.protocol === 'sscnet' || c.protocol === 'pulse-analog') {
+        suffix = (needRJ || needHS) ? '-RJ' : '';
+      } else if (needHS) {
+        suffix = isN1 ? '-HSN1' : '-HS';
+      } else if (needRJ) {
+        suffix = isN1 ? '-RJN1' : '-RJ';
+      } else if (isN1) {
+        suffix = '-N1';
+      }
+
+      let valid = true;
+      let totalAmpUnits = 0;
+
+      function pushSingle(qty, catLabel, remark) {
+        totalAmpUnits += qty;
+        opts.bom.push({
+          cat: catLabel,
+          part: 'MR-J5-' + opts.singleCap + protoCode + vCode + suffix,
+          qty: qty + ' 台',
+          desc: (is400 ? '三相 AC400V' : c.powerSupply === '1p-200v' ? '單相/三相 AC200V' : 'AC200V') + ' 1 軸獨立型伺服放大器' + (opts.descSuffix || ''),
+          remark: remark || opts.boostRemark || ''
+        });
+      }
+
+      if (c.topology === 'dc-bus-400v') {
+        if (!is400) {
+          valid = false;
+          opts.warnings.push('400V 共直流母線 (MR-J5D) 僅適用三相 AC 400V 電源，請切換電源為三相 AC 400V。');
+        }
+        if (c.motorCategory !== 'rotary') {
+          valid = false;
+          opts.warnings.push('400V 共直流母線驅動模組 MR-J5D1/D2/D3 僅限驅動「旋轉伺服馬達」，不支援線性或直驅馬達。');
+        }
+        if (c.protocol === 'sscnet' || c.protocol === 'pulse-analog') {
+          valid = false;
+          opts.warnings.push('MR-J5D 系列僅支援 CC-Link IE TSN (-G4) 與 EtherCAT/EtherNet/IP (-G4-N1)，不支援 SSCNET 或脈衝列。');
+        }
+        if (opts.perAxisKw > 7.0) {
+          valid = false;
+          opts.warnings.push('MR-J5D 驅動模組單軸上限為 7.0 kW，11~22 kW 旋轉馬達請改選 1 軸獨立型 MR-J5-12K/17K/25K_4。');
+        }
+        const dCap = fmtCapD400(opts.perAxisKw);
+        const dN1 = isN1 ? '-N1' : '';
+        if (c.feedback === 'full-closed-4wire-abz') {
+          totalAmpUnits += axes;
+          opts.bom.push({
+            cat: '400V 1 軸共母線驅動模組',
+            part: 'MR-J5D1-' + dCap + 'G4' + dN1,
+            qty: axes + ' 台',
+            desc: '4 線式/ABZ 全閉環需採用含 CN2AL 之 D1 驅動模組 (1 軸/台)',
+            remark: '每台對應 1 軸，共 ' + axes + ' 台'
+          });
+        } else if (c.feedback === 'semi-closed' && opts.perAxisKw <= 2.0 && axes >= 3) {
+          const d3Qty = Math.floor(axes / 3);
+          const rem = axes % 3;
+          totalAmpUnits += d3Qty;
+          opts.bom.push({
+            cat: '400V 3 軸共母線驅動模組',
+            part: 'MR-J5D3-' + dCap + dCap + dCap + 'G4' + dN1,
+            qty: d3Qty + ' 台',
+            desc: '3 軸共母線驅動模組 (寬度僅 60 mm)，共驅動 ' + (d3Qty * 3) + ' 軸',
+            remark: rem > 0 ? '驅動其中 ' + (d3Qty * 3) + ' 軸，餘 ' + rem + ' 軸由下方模組補齊' : '剛好配足 ' + axes + ' 軸，無空置軸'
+          });
+          if (rem === 2) {
+            totalAmpUnits += 1;
+            opts.bom.push({ cat: '補齊餘 2 軸用 400V 驅動模組', part: 'MR-J5D2-' + dCap + dCap + 'G4' + dN1, qty: '1 台', desc: '2 軸共母線驅動模組，補齊剩餘 2 軸', remark: '' });
+          } else if (rem === 1) {
+            totalAmpUnits += 1;
+            opts.bom.push({ cat: '補齊餘 1 軸用 400V 驅動模組', part: 'MR-J5D1-' + dCap + 'G4' + dN1, qty: '1 台', desc: '1 軸共母線驅動模組，補齊剩餘 1 軸', remark: '' });
+          }
+        } else if (axes >= 2) {
+          const d2Qty = Math.floor(axes / 2);
+          const rem = axes % 2;
+          totalAmpUnits += d2Qty;
+          opts.bom.push({
+            cat: '400V 2 軸共母線驅動模組',
+            part: 'MR-J5D2-' + dCap + dCap + 'G4' + dN1,
+            qty: d2Qty + ' 台',
+            desc: '2 軸共母線驅動模組 (支援 2 線式全閉環)，共驅動 ' + (d2Qty * 2) + ' 軸',
+            remark: rem === 1 ? '驅動其中 ' + (d2Qty * 2) + ' 軸，餘 1 軸搭配 1 台 D1 補齊' : '剛好配足 ' + axes + ' 軸，無空置軸'
+          });
+          if (rem === 1) {
+            totalAmpUnits += 1;
+            opts.bom.push({ cat: '補齊餘 1 軸用 400V 驅動模組', part: 'MR-J5D1-' + dCap + 'G4' + dN1, qty: '1 台', desc: '1 軸共母線驅動模組，補齊剩餘 1 軸', remark: '' });
+          }
+        } else {
+          totalAmpUnits += 1;
+          opts.bom.push({ cat: '400V 1 軸共母線驅動模組', part: 'MR-J5D1-' + dCap + 'G4' + dN1, qty: '1 台', desc: '1 軸共母線驅動模組 (附 CN2AL 端子)', remark: '單軸系統可評估改用獨立型 MR-J5-G4' });
+        }
+
+        const totalKw = opts.perAxisKw * axes;
+        const cv = selectConverter400V(totalKw);
+        opts.bom.push({
+          cat: '400V 電源再生變流器與母線',
+          part: cv + ' + MR-AL-_4 + MR-DCBAR' + (totalAmpUnits % 2 === 0 ? ' + MR-DCBAR024-B05' : ''),
+          qty: '1 套',
+          desc: '依總軸容量約 ' + totalKw.toFixed(1) + ' kW 選配變流器與母線排',
+          remark: totalAmpUnits % 2 === 0 ? '共 ' + totalAmpUnits + ' 台驅動模組 (偶數台)，已納入間隔排；總寬 ≤1500 mm' : '共 ' + totalAmpUnits + ' 台驅動模組；總寬 ≤1500 mm'
+        });
+        return { valid, totalAmpUnits };
+      }
+
+      if (c.topology === '2-axis' || c.topology === '3-axis') {
+        const isW3 = c.topology === '3-axis';
+        if (is400) {
+          valid = false;
+          opts.warnings.push((isW3 ? '3 軸一體型 MR-J5W3' : '2 軸一體型 MR-J5W2') + ' 僅支援 AC 200V；400V 多軸請改選「400V 共直流母線 (MR-J5D)」或「1 軸獨立型」。');
+        }
+        if (c.protocol === 'pulse-analog') {
+          valid = false;
+          opts.warnings.push('多軸一體型 MR-J5W2 / MR-J5W3 無脈衝/類比 (-A) 型號，僅支援 CC-Link IE TSN、EtherCAT/EIP 或 SSCNET III/H。');
+        }
+        if (isW3 && opts.perAxisKw > 0.4) {
+          valid = false;
+          opts.warnings.push('3 軸一體型 MR-J5W3 單軸上限為 0.4 kW (444)，目前需求 ' + opts.perAxisKw + ' kW，請改選 MR-J5W2 (≤1.0 kW) 或 1 軸獨立型。');
+        }
+        if (!isW3 && opts.perAxisKw > 1.0) {
+          valid = false;
+          opts.warnings.push('2 軸一體型 MR-J5W2 單軸上限為 1.0 kW (1010)，目前需求 ' + opts.perAxisKw + ' kW，請改選 1 軸獨立型放大器。');
+        }
+        if (!isW3 && c.powerSupply === '1p-200v' && opts.perAxisKw > 0.75) {
+          valid = false;
+          opts.warnings.push('MR-J5W2-1010 (1.0 kW × 2) 不支援單相 AC 200V 輸入，請改用三相 AC 200V 或 1 軸獨立型。');
+        }
+        if (isW3 && c.feedback !== 'semi-closed') {
+          valid = false;
+          opts.warnings.push('MR-J5W3 不支援全閉環控制；有光學尺需求請改選 MR-J5W2 (2線式) 或 1 軸型 (-RJ / -HS)。');
+        }
+        if (!isW3 && c.feedback === 'full-closed-4wire-abz') {
+          valid = false;
+          opts.warnings.push('MR-J5W2 僅支援 2 線式串列全閉環；4 線式或 ABZ 差動光學尺請改選 1 軸 -RJ / -HS。');
+        }
+        if (c.safety === 'standalone-hs') {
+          valid = false;
+          opts.warnings.push('獨立安全 DI/DO (-HS) 僅提供於 1 軸獨立型放大器，MR-J5W2/W3 係透過網路安全通信實現 STO~SLT。');
+        }
+
+        const mProto = c.protocol === 'sscnet' ? 'B' : 'G';
+        const mN1 = isN1 ? '-N1' : '';
+        const w2Cap = opts.perAxisKw <= 0.2 ? '22' : opts.perAxisKw <= 0.4 ? '44' : opts.perAxisKw <= 0.75 ? '77' : '1010';
+        const w3Cap = opts.perAxisKw <= 0.2 ? '222' : '444';
+        const pLabel = mProto === 'B' ? 'SSCNET III/H' : mN1 ? 'EtherCAT/EIP' : 'CC-Link IE TSN';
+
+        if (!isW3) {
+          if (axes === 1) {
+            valid = false;
+            opts.warnings.push('目前設備總軸數僅 1 軸，無須使用 2 軸一體型 MR-J5W2，建議改選「1 軸獨立型放大器」。');
+            totalAmpUnits += 1;
+            opts.bom.push({
+              cat: '2 軸一體伺服放大器',
+              part: 'MR-J5W2-' + w2Cap + mProto + mN1,
+              qty: '1 台',
+              desc: '2 軸一體型放大器 (' + pLabel + ') — 僅使用 1 軸，另 1 軸空置',
+              remark: ''
+            });
+          } else {
+            const w2Qty = Math.floor(axes / 2);
+            const rem = axes % 2;
+            totalAmpUnits += w2Qty;
+            opts.bom.push({
+              cat: '2 軸一體伺服放大器',
+              part: 'MR-J5W2-' + w2Cap + mProto + mN1,
+              qty: w2Qty + ' 台',
+              desc: '2 軸一體型放大器 (' + pLabel + ')，共驅動 ' + (w2Qty * 2) + ' 軸 (每台驅動 2 軸)',
+              remark: rem === 0 ? '共 ' + axes + ' 軸 ÷ 2 軸/台 = 剛好 ' + w2Qty + ' 台，無閒置空軸' : '驅動其中 ' + (w2Qty * 2) + ' 軸，餘 1 軸自動搭配下方 1 軸型放大器'
+            });
+            if (rem === 1) {
+              pushSingle(1, '補齊餘 1 軸用 1 軸伺服放大器', '補足奇數總軸數之第 1 軸，避免浪費空軸成本');
+            }
+          }
+        } else {
+          if (axes < 3) {
+            valid = false;
+            opts.warnings.push(axes === 1
+              ? '目前設備總軸數僅 1 軸，無須選用 3 軸一體型 MR-J5W3，請改選「1 軸獨立型」。'
+              : '目前設備總軸數為 2 軸，建議改選「2 軸一體型 MR-J5W2」以獲得最佳成本與體積效益。'
+            );
+            totalAmpUnits += 1;
+            opts.bom.push({
+              cat: '3 軸一體伺服放大器',
+              part: 'MR-J5W3-' + w3Cap + mProto + mN1,
+              qty: '1 台',
+              desc: '3 軸一體型放大器 (' + pLabel + '，寬僅 75 mm) — 驅動 ' + axes + ' 軸，餘 ' + (3 - axes) + ' 軸空置',
+              remark: ''
+            });
+          } else {
+            const w3Qty = Math.floor(axes / 3);
+            const rem = axes % 3;
+            totalAmpUnits += w3Qty;
+            opts.bom.push({
+              cat: '3 軸一體伺服放大器',
+              part: 'MR-J5W3-' + w3Cap + mProto + mN1,
+              qty: w3Qty + ' 台',
+              desc: '3 軸一體型放大器 (' + pLabel + '，寬僅 75 mm)，共驅動 ' + (w3Qty * 3) + ' 軸',
+              remark: rem === 0 ? '共 ' + axes + ' 軸 ÷ 3 軸/台 = 剛好 ' + w3Qty + ' 台，無閒置空軸' : '驅動其中 ' + (w3Qty * 3) + ' 軸，餘 ' + rem + ' 軸自動以 ' + (rem === 2 ? '1 台 MR-J5W2' : '1 台 1 軸型') + ' 補齊'
+            });
+            if (rem === 2) {
+              totalAmpUnits += 1;
+              opts.bom.push({ cat: '補齊餘 2 軸用 2 軸一體放大器', part: 'MR-J5W2-' + w2Cap + mProto + mN1, qty: '1 台', desc: '2 軸一體型放大器 (' + pLabel + ')，精準補足剩餘 2 軸', remark: '' });
+            } else if (rem === 1) {
+              pushSingle(1, '補齊餘 1 軸用 1 軸伺服放大器', '精準補足剩餘 1 軸，避免浪費空軸');
+            }
+          }
+        }
+        return { valid, totalAmpUnits };
+      }
+
+      pushSingle(axes, '伺服放大器', '');
+      return { valid, totalAmpUnits };
+    }
+
+    function computeBom(c) {
+      const warnings = [];
+      const bom = [];
+      let valid = true;
+      const axes = Math.max(1, Math.floor(c.axesCount || 1));
+
+      if (c.powerSupply === 'dc-48v') {
+        if (c.motorCategory !== 'rotary') { valid = false; warnings.push('DC48V MR-MD333G 僅支援超小型旋轉馬達。'); }
+        const amp = c.protocol === 'ethercat' ? 'MR-MD333G-N1' : 'MR-MD333G';
+        const mdQty = Math.ceil(axes / 3);
+        bom.push({ cat:'基板型 3 軸驅動模組', part: amp, qty: mdQty + ' 組', desc:'DC48V、30W×3軸、耐振 39 m/s² (支援最高 ' + (mdQty*3) + ' 軸)', remark:'' });
+        bom.push({ cat:'DC48V 伺服馬達', part: c.holdingBrake ? 'HK-KT0536E2B-S1' : 'HK-KT0536E2-S1', qty: axes + ' 顆', desc:'50W、26-bit 無電池絕對型', remark:'' });
+        return { valid, bom, warnings, cycle: '250 μs', kva: '約 0.08 kW (DC48V)', totalAmpUnits: mdQty, selectedMotorModel: 'HK-KT0536E2-S1', selectedMotorKw: 0.05 };
+      }
+
+      const ctrl = DATA.controllers.find(x => x.protocol.includes(c.protocol));
+      if (ctrl) bom.push({ cat:'建議控制器', part: ctrl.model, qty:'1 套', desc: ctrl.series + ' (' + ctrl.minCycleUs + ')', remark:'' });
+
+      if (c.powerSupply === '1p-100v') {
+        if (c.motorCategory !== 'rotary') { valid = false; warnings.push('MR-CM08K1 單相 AC100V 僅支援旋轉伺服馬達。'); }
+        if (c.targetPowerKw > 0.75) { valid = false; warnings.push('單相 AC100V MR-CM08K1 單軸上限 0.75 kW，請改選 AC 200V/400V。'); }
+      }
+
+      const is400 = c.powerSupply === '3p-400v';
+      const isN1 = c.protocol === 'ethercat' || c.protocol === 'ethernet-ip';
+      let totalAmpUnits = axes;
+      let selectedMotorModel = '';
+      let selectedMotorKw = c.targetPowerKw;
+
+      if (c.motorCategory === 'rotary') {
+        const voltagePool = DATA.rotaryMotors
+          .filter(m => m.voltage !== '48V' && (is400 ? !!m.standardAmp400 : m.voltage === '200V'))
+          .sort((a,b) => a.powerKw - b.powerKw);
+        let pool = voltagePool;
+        if (c.rotaryInertia === 'medium-inertia') pool = voltagePool.filter(m => m.series === 'HK-ST');
+        else if (c.rotaryInertia === 'ultra-low') pool = voltagePool.filter(m => m.series === 'HK-MT' || m.series === 'HK-RT');
+        else if (c.rotaryInertia === 'large-capacity') pool = voltagePool.filter(m => m.series === 'HK-JT');
+        else if (c.rotaryInertia === 'high-speed') pool = voltagePool.filter(m => m.maxSpeedRpm >= 10000);
+        else pool = voltagePool.filter(m => m.series === 'HK-KT');
+
+        let m = pool.find(x => x.powerKw >= c.targetPowerKw);
+        if (!m) m = voltagePool.find(x => x.powerKw >= c.targetPowerKw) || voltagePool[voltagePool.length - 1];
+        selectedMotorModel = m.model;
+        selectedMotorKw = m.powerKw;
+
+        const baseCap = fmtCap(m.powerKw);
+        const boostStr = is400 ? m.boostAmp400 : m.boostAmp200;
+        const singleCap = (c.torqueBoost && boostStr)
+          ? boostStr.replace('MR-J5-','').replace('_4','').replace('_','')
+          : baseCap;
+
+        const noBrake = m.powerKw >= 22.0;
+        if (c.holdingBrake && noBrake) {
+          warnings.push('22 kW (HK-JT22K1MJ) 附強制冷卻風扇，原廠無內建電磁煞車規格，垂直負載請另配外部機械煞車。');
+        }
+
+        const alloc = allocateAmplifiers({
+          criteria: c,
+          perAxisKw: m.powerKw,
+          singleCap: singleCap,
+          descSuffix: (c.torqueBoost && singleCap !== baseCap) ? '・選用大一階增轉矩組合 ◎' : '',
+          boostRemark: (!c.torqueBoost && boostStr) ? '可改配 ' + boostStr + ' 提升最大轉矩至 ' + m.boostMaxTorqueNm + ' N·m' : '',
+          bom, warnings
+        });
+        if (!alloc.valid) valid = false;
+        totalAmpUnits = alloc.totalAmpUnits;
+
+        const mPart = (c.holdingBrake && !noBrake) ? m.model.replace(/\(B\)/g, 'B') : m.model.replace(/\(B\)/g, '');
+        bom.push({
+          cat: '旋轉伺服馬達',
+          part: mPart,
+          qty: axes + ' 顆',
+          desc: m.series + ' ' + m.powerKw + ' kW · ' + m.ratedTorqueNm + ' N·m (最大 ' + (c.torqueBoost && m.boostMaxTorqueNm ? m.boostMaxTorqueNm : m.maxTorqueNm) + ' N·m) · 法蘭 □' + m.flangeMm + ' mm',
+          remark: m.notes || '標配 26-bit 無電池絕對型編碼器'
+        });
+
+        if (c.powerSupply === '1p-100v') {
+          const cm08 = Math.max(Math.ceil((m.powerKw * axes) / 0.8), Math.ceil(axes / 3));
+          bom.push({ cat:'AC100V 電源變換器', part:'MR-CM08K1', qty: cm08 + ' 台', desc:'限單台 0.8 kW / 最多 3 軸 (僅旋轉馬達)', remark:'' });
+        } else if (c.topology === 'common-bus-200v') {
+          if (m.powerKw > 2.0) { valid = false; warnings.push('MR-CM3K 簡易共直流母線僅支援 ≤2.0 kW。'); }
+          const cm3k = Math.max(Math.ceil((m.powerKw * axes) / 3.0), Math.ceil(totalAmpUnits / 6));
+          bom.push({ cat:'200V 共直流母線單元', part:'MR-CM3K', qty: cm3k + ' 台', desc:'單台上限 3 kW，最多並聯 6 台放大器', remark:'' });
+        }
+
+        if (m.powerKw >= 11) {
+          const dbu = m.powerKw >= 22
+            ? (is400 ? 'DBU-22K-4 + GRZG400-_' : 'DBU-22K-R1 + GRZG400-_')
+            : m.powerKw >= 15
+            ? (is400 ? 'DBU-22K-4 + GRZG400-_' : 'DBU-15K-R1 + GRZG400-_')
+            : (is400 ? 'DBU-11K-4 + GRZG400-_' : 'DBU-11K-R1 + GRZG400-_');
+          bom.push({ cat:'大容量必選周邊 (12~25kW)', part: dbu, qty: axes + ' 組', desc:'外置動力制動單元 (DBU) 與外置再生電阻', remark:'12~25kW 無內建 DB 與再生電阻' });
+        } else if (c.powerSupply === '1p-200v' && m.powerKw > 0.75 && c.topology !== '2-axis') {
+          warnings.push('單相 AC200V 驅動 1~2 kW 時實效負載率須 ≤75%，且不對應 SEMI F47。');
+        }
+      } else if (c.motorCategory === 'linear') {
+        const lm = DATA.linearMotors.find(x => x.contThrustN >= c.targetThrustN) || DATA.linearMotors[0];
+        selectedMotorModel = lm.series;
+        const estKw = lm.contThrustN > 900 ? 3.5 : lm.contThrustN > 400 ? 2.0 : lm.contThrustN > 200 ? 1.0 : 0.4;
+        selectedMotorKw = estKw;
+        const alloc = allocateAmplifiers({ criteria: c, perAxisKw: estKw, singleCap: fmtCap(estKw), descSuffix: '・線性驅動 ' + estKw + ' kW 等級', boostRemark: '', bom, warnings });
+        if (!alloc.valid) valid = false;
+        totalAmpUnits = alloc.totalAmpUnits;
+        bom.push({ cat:'線性馬達一次側', part: lm.model, qty: axes + ' 組', desc: lm.coreType + ' · 連續 ' + lm.contThrustN + ' N (最大 ' + lm.maxThrustN + ' N)', remark:'' });
+        bom.push({ cat:'二次側磁軌', part: lm.secondaryModel, qty: (axes * (lm.series === 'LM-K2' ? 2 : 1)) + ' 排', desc: '建議總長 ≥ ' + (c.strokeMm + lm.primaryLengthMm) + ' mm', remark:'' });
+        warnings.push('CN2 嚴禁混用 MR-J4FCCBL03M (全閉環) 與 MR-J4THCBL03M (感溫線)。');
+      } else {
+        const dd = DATA.directDriveMotors.find(x => x.ratedTorqueNm >= c.targetDdTorqueNm) || DATA.directDriveMotors[DATA.directDriveMotors.length - 1];
+        selectedMotorModel = dd.series;
+        const ddKw = dd.ratedTorqueNm <= 4.5 ? 0.2 : dd.ratedTorqueNm <= 9 ? 0.4 : dd.ratedTorqueNm <= 48 ? 1.0 : 3.5;
+        selectedMotorKw = ddKw;
+        const alloc = allocateAmplifiers({ criteria: c, perAxisKw: ddKw, singleCap: fmtCap(ddKw), descSuffix: '・直驅馬達適用', boostRemark: '', bom, warnings });
+        if (!alloc.valid) valid = false;
+        totalAmpUnits = alloc.totalAmpUnits;
+        bom.push({ cat:'直驅馬達 (TM)', part: dd.model, qty: axes + ' 顆', desc: '外徑 φ' + dd.outerDiaMm + 'mm · 中空 φ' + dd.hollowDiaMm + 'mm · 額定 ' + dd.ratedTorqueNm + ' N·m', remark:'' });
+        if (c.ddAbsolute) bom.push({ cat:'絕對位置電池', part:'MR-BTAS01 + MR-BAT6V1SET', qty: axes + ' 套', desc:'TM 直驅建構絕對位置必選', remark:'' });
+      }
+
+      if (isN1) warnings.push('-N1 (EtherCAT/EIP) 不支援押付運轉與驅動器間通信。');
+
+      const minCycle = c.protocol === 'cc-link-tsn'
+        ? (c.topology === '3-axis' || c.safety !== 'sto' || c.feedback !== 'semi-closed' ? '125 μs' : c.topology === '2-axis' ? '62.5 μs' : '31.25 μs')
+        : c.protocol === 'ethercat' ? (c.topology === '2-axis' || c.topology === '3-axis' || c.safety !== 'sto' ? '250 μs' : '125 μs')
+        : c.protocol === 'ethernet-ip' ? '1~100 ms'
+        : c.protocol === 'sscnet' ? '222 μs' : '即時脈衝';
+      return {
+        valid, bom, warnings, cycle: minCycle,
+        kva: c.motorCategory === 'rotary' ? estimateKva(selectedMotorKw) : '依 Motorizer',
+        totalAmpUnits, selectedMotorModel, selectedMotorKw
+      };
+    }
+
+    function optBtn(active, title, sub, onclickJs) {
+      return '<button type="button" class="opt-btn '+(active?'active':'')+'" onclick="'+onclickJs+'"><div class="t">'+esc(title)+'</div><div class="s">'+esc(sub)+'</div></button>';
+    }
+
+    function renderWizard() {
+      const stepsEl = document.getElementById('wizard-steps');
+      const kws = [0.05, 0.1, 0.2, 0.4, 0.6, 0.75, 1.0, 1.5, 2.0, 3.5, 5.0, 7.0, 11.0, 15.0, 22.0];
+      stepsEl.innerHTML = [
+        '<div class="card"><div class="card-head"><div><div class="step-tag">STEP 01</div><h2 class="card-title">機構驅動型式與軸數</h2></div><div><label style="font-size:12px;margin-right:6px;">設備總軸數</label><input type="number" min="1" max="256" style="width:74px;text-align:center;" value="'+state.axesCount+'" onchange="updateState(\'axesCount\', Math.max(1, Math.min(256, Number(this.value)||1)))" /></div></div>' +
+        '<div class="opt-grid cols-3">' +
+          optBtn(state.motorCategory==='rotary','旋轉伺服 (HK)','26-bit 無電池絕對型 50W~22kW',"updateState('motorCategory','rotary')") +
+          optBtn(state.motorCategory==='linear','線性伺服 (LM)','高速高加減速 / 無鐵芯',"updateState('motorCategory','linear')") +
+          optBtn(state.motorCategory==='direct','直驅馬達 (TM)','零背隙大中空轉盤',"updateState('motorCategory','direct')") +
+        '</div>' +
+        '<span class="label-sm">放大器拓樸架構</span><div class="opt-grid cols-2">' +
+          optBtn(state.topology==='1-axis','1 軸獨立型','全容量 0.1~25 kW 完整支援',"updateState('topology','1-axis')") +
+          optBtn(state.topology==='2-axis','2 軸一體 (MR-J5W2)','200V 0.2~1.0 kW×2 (2軸=1台)',"updateState('topology','2-axis')") +
+          optBtn(state.topology==='3-axis','3 軸一體 (MR-J5W3)','75mm 極窄寬度 (≤0.4kW，3軸=1台)',"updateState('topology','3-axis')") +
+          (state.powerSupply === '3p-400v'
+            ? optBtn(state.topology==='dc-bus-400v','400V 共直流母線 (MR-J5D)','搭 MR-CV 變流器 (限旋轉)',"updateState('topology','dc-bus-400v')")
+            : optBtn(state.topology==='common-bus-200v','200V 簡易共母線 (MR-CM3K)','3 kW 內最多並聯 6 台放大器',"updateState('topology','common-bus-200v')")) +
+        '</div></div>',
+
+        '<div class="card"><div class="card-head"><div><div class="step-tag">STEP 02</div><h2 class="card-title">電源與通信協定</h2></div></div>' +
+        '<div class="opt-grid cols-3">' +
+          optBtn(state.powerSupply==='3p-200v','三相 AC 200V','主流標準 (0.1~25kW)',"updateState('powerSupply','3p-200v')") +
+          optBtn(state.powerSupply==='1p-200v','單相 AC 200V','0.1~2kW (>750W 限75%)',"updateState('powerSupply','1p-200v')") +
+          optBtn(state.powerSupply==='3p-400v','三相 AC 400V','大型機台與外銷規格',"updateState('powerSupply','3p-400v')") +
+          optBtn(state.powerSupply==='1p-100v','單相 AC 100V','搭 MR-CM08K1 (≤0.8kW)',"updateState('powerSupply','1p-100v')") +
+          optBtn(state.powerSupply==='dc-48v','DC 48V 基板型','MR-MD333G (30W×3軸)',"updateState('powerSupply','dc-48v')") +
+        '</div>' +
+        '<span class="label-sm">控制網路介面</span><div class="opt-grid cols-2">' +
+          optBtn(state.protocol==='cc-link-tsn','CC-Link IE TSN (-G)','1Gbps TSN · 最速 31.25 μs',"updateState('protocol','cc-link-tsn')") +
+          optBtn(state.protocol==='ethercat','EtherCAT (-G-N1)','CoE/EoE/FSoE · 125 μs',"updateState('protocol','ethercat')") +
+          optBtn(state.protocol==='ethernet-ip','EtherNet/IP (-G-N1)','CIP Sync / CIP Safety',"updateState('protocol','ethernet-ip')") +
+          optBtn(state.protocol==='sscnet','SSCNET III/H (-B)','光纖 222 μs · 相容 HG 馬達',"updateState('protocol','sscnet')") +
+          optBtn(state.protocol==='pulse-analog','脈衝列 / 類比 (-A)','4Mpps / ±10V / 內建點表',"updateState('protocol','pulse-analog')") +
+        '</div></div>',
+
+        '<div class="card"><div class="card-head"><div><div class="step-tag">STEP 03</div><h2 class="card-title">負載功率 / 推力與安全回授</h2></div></div>' +
+        (state.motorCategory==='rotary' && state.powerSupply !== 'dc-48v'
+          ? '<span class="label-sm" style="margin-top:0;">負載慣量特性</span><div class="opt-grid cols-2" style="margin-bottom:12px;">' +
+              optBtn(state.rotaryInertia==='low-inertia','低慣量小容量 (HK-KT)','0.05~2.0 kW 泛用首選',"updateState('rotaryInertia','low-inertia')") +
+              optBtn(state.rotaryInertia==='medium-inertia','中慣量高剛性 (HK-ST)','0.5~9.0 kW 搬送/工具機',"updateState('rotaryInertia','medium-inertia')") +
+              optBtn(state.rotaryInertia==='ultra-low','超低慣量高速 (HK-MT/RT)','0.05~7.0 kW 高加減速',"updateState('rotaryInertia','ultra-low')") +
+              optBtn(state.rotaryInertia==='large-capacity','大容量 11~22 kW (HK-JT)','射出機/沖壓/重切削',"updateState('rotaryInertia','large-capacity')") +
+            '</div>' +
+            '<span class="label-sm">目標單軸額定功率 ('+state.targetPowerKw+' kW)</span><div class="kw-strip">' +
+            kws.map(k => '<button type="button" class="kw-btn '+(state.targetPowerKw===k?'active':'')+'" onclick="updateState(\'targetPowerKw\','+k+')">'+(k<1?(k*1000)+'W':k+'kW')+'</button>').join('') +
+            '</div><div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:14px;">' +
+            '<label style="font-size:13px;cursor:pointer;"><input type="checkbox" '+(state.holdingBrake?'checked':'')+' onchange="updateState(\'holdingBrake\',this.checked)" /> 加配保持電磁煞車 (B)</label>' +
+            '<label style="font-size:13px;cursor:pointer;"><input type="checkbox" '+(state.torqueBoost?'checked':'')+' onchange="updateState(\'torqueBoost\',this.checked)" /> 大一階放大器增轉矩組合 (◎)</label>' +
+            '</div>'
+          : state.motorCategory==='linear'
+          ? '<div class="opt-grid cols-2"><div><label class="label-sm">需求連續推力 (N)</label><input type="number" value="'+state.targetThrustN+'" onchange="updateState(\'targetThrustN\',Number(this.value)||200)" /></div><div><label class="label-sm">行程 (mm)</label><input type="number" value="'+state.strokeMm+'" onchange="updateState(\'strokeMm\',Number(this.value)||500)" /></div></div>'
+          : state.motorCategory==='direct'
+          ? '<div><label class="label-sm">需求額定轉矩 (N·m)</label><input type="number" value="'+state.targetDdTorqueNm+'" onchange="updateState(\'targetDdTorqueNm\',Number(this.value)||4.5)" /></div>'
+          : ''
+        ) +
+        '<span class="label-sm">安全機能與全閉環回授</span><div class="opt-grid cols-3">' +
+          optBtn(state.safety==='sto','基本 STO','CN8 硬體遮斷',"updateState('safety','sto')") +
+          optBtn(state.safety==='advanced-safety','安全監視 (-RJ)','STO~SLT 完整監視 + CN2L',"updateState('safety','advanced-safety')") +
+          optBtn(state.safety==='standalone-hs','獨立安全 (-HS)','CN3 3系統 DI/DO PLe',"updateState('safety','standalone-hs')") +
+        '</div>' +
+        '<div class="opt-grid cols-3" style="margin-top:10px;">' +
+          optBtn(state.feedback==='semi-closed','半閉環','馬達 26-bit 編碼器',"updateState('feedback','semi-closed')") +
+          optBtn(state.feedback==='full-closed-2wire','2線全閉環','經 CN2 連接',"updateState('feedback','full-closed-2wire')") +
+          optBtn(state.feedback==='full-closed-4wire-abz','4線 / ABZ 全閉環','經 CN2L (-RJ/-HS)',"updateState('feedback','full-closed-4wire-abz')") +
+        '</div></div>'
+      ].join('');
+
+      const res = computeBom(state);
+      const bomEl = document.getElementById('bom-panel');
+      const dimCall = "openDimensionFor('" + state.motorCategory + "','" + esc(res.selectedMotorModel).replace(/'/g,'') + "'," + (res.selectedMotorKw || 0.4) + "," + (!!state.holdingBrake) + "," + (state.strokeMm || 500) + ")";
+      bomEl.innerHTML =
+        '<div style="font-size:12px;font-weight:700;color:#E60012;">即時工程選型清單 (BOM)</div>' +
+        '<div style="font-size:16px;font-weight:700;margin-top:4px;">'+state.axesCount+' 軸 MELSERVO-J5 建議系統架構</div>' +
+        '<div style="font-size:12px;color:#64748B;">共 '+res.totalAmpUnits+' 台驅動器</div>' +
+        '<div class="metrics-row"><div><div style="font-size:11px;color:#64748B;">單軸電源預估</div><div class="mono" style="font-weight:700;">'+esc(res.kva)+'</div></div>' +
+        '<div><div style="font-size:11px;color:#64748B;">最小通信週期</div><div class="mono" style="font-weight:700;">'+esc(res.cycle)+'</div></div></div>' +
+        (res.warnings.length ? '<div class="warn-box '+(res.valid?'':'error')+'"><strong>'+(res.valid?'選型檢核提醒：':'組合相容性衝突：')+'</strong><br/>'+res.warnings.map(esc).join('<br/>')+'</div>' : '') +
+        '<div class="bom-list">' +
+        res.bom.map(b => '<div class="bom-item"><div style="display:flex;justify-content:space-between;font-size:11px;color:#64748B;"><span>'+esc(b.cat)+'</span><span class="mono" style="font-weight:700;color:#0F172A;">'+esc(b.qty)+'</span></div><div class="mono" style="font-weight:700;font-size:14px;margin:2px 0;">'+esc(b.part)+'</div><div style="font-size:12px;color:#475569;">'+esc(b.desc)+'</div>'+(b.remark?'<div class="remark-box">註：'+esc(b.remark)+'</div>':'')+'</div>').join('') +
+        '</div>' +
+        '<div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:8px;">' +
+          '<button type="button" class="btn-primary" style="flex:1;" onclick="'+dimCall+'">檢視對應馬達尺寸圖</button>' +
+          '<button type="button" class="btn-outline" onclick="copyBom(this)">複製 BOM</button>' +
+        '</div>';
+    }
+
+    function copyBom(btn) {
+      const res = computeBom(state);
+      const txt = res.bom.map(b => b.cat + ': ' + b.part + ' (' + b.qty + ') - ' + b.desc).join('\n');
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(txt).then(() => {
+          btn.textContent = '已複製';
+          setTimeout(() => btn.textContent = '複製 BOM', 2000);
+        });
+      }
+    }
+
+    function buildRotarySvg(spec, withBrake) {
+      const showBrake = withBrake && spec.bodyLBrake !== null;
+      const activeL = showBrake ? spec.bodyLBrake : spec.bodyL;
+      const activeKL = (showBrake && spec.connKLBrake !== null) ? spec.connKLBrake : spec.connKL;
+      const bodyW = Math.max(130, Math.min(250, 95 + (activeL / 500) * 165));
+      const brakeW = showBrake ? Math.max(24, ((spec.bodyLBrake - spec.bodyL) / activeL) * bodyW) : 0;
+      const shaftW = Math.max(46, Math.min(84, 34 + (spec.shaftLenLR / 140) * 52));
+      const bodyH = Math.max(82, Math.min(130, 70 + (spec.flangeLC / 250) * 62));
+      const shaftH = Math.max(14, Math.min(34, 12 + (spec.shaftDiaS / 65) * 24));
+      const cy = 158, flangeX = 320, flangeW = 14;
+      const bodyLeftX = flangeX - bodyW;
+      const shaftEndX = flangeX + flangeW + 6 + shaftW;
+      const klX = flangeX - Math.max(28, Math.min(bodyW - 22, (activeKL / activeL) * bodyW));
+      const fCx = 560, fCy = 158, fHalf = Math.max(48, Math.min(68, 44 + (spec.flangeLC / 250) * 24));
+      const pilotR = fHalf * 0.72, pcdR = fHalf * 0.84;
+      const shaftR = Math.max(8, Math.min(22, 6 + (spec.shaftDiaS / 65) * 16));
+      const isTwo = spec.mountHole.indexOf('2×') === 0;
+      const holes = (isTwo ? [[-1,-1],[1,1]] : [[-1,-1],[1,-1],[-1,1],[1,1]]).map(p =>
+        '<circle cx="'+(fCx+p[0]*pcdR*0.707)+'" cy="'+(fCy+p[1]*pcdR*0.707)+'" r="4.5" fill="#FFFFFF" stroke="#0F172A" stroke-width="1.5"/>'
+      ).join('');
+      return '<svg viewBox="0 0 700 310" class="dim-svg" role="img" aria-label="'+esc(spec.model)+' 外形尺寸圖">' +
+        '<defs><pattern id="g1" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M 20 0 L 0 0 0 20" fill="none" stroke="#F1F5F9" stroke-width="1"/></pattern></defs>' +
+        '<rect width="700" height="310" fill="url(#g1)"/>' +
+        '<text x="16" y="22" font-size="11" font-family="monospace" font-weight="700" fill="#64748B">SIDE VIEW · 側面外形圖 (mm)</text>' +
+        '<text x="485" y="22" font-size="11" font-family="monospace" font-weight="700" fill="#64748B">FLANGE VIEW · 軸端法蘭面</text>' +
+        '<line x1="25" y1="'+cy+'" x2="'+(shaftEndX+24)+'" y2="'+cy+'" stroke="#CBD5E1" stroke-width="1" stroke-dasharray="6 4"/>' +
+        '<rect x="'+bodyLeftX+'" y="'+(cy-bodyH/2)+'" width="'+bodyW+'" height="'+bodyH+'" rx="3" fill="#F8FAFC" stroke="#0F172A" stroke-width="2"/>' +
+        (showBrake ? '<rect x="'+bodyLeftX+'" y="'+(cy-bodyH/2+1)+'" width="'+brakeW+'" height="'+(bodyH-2)+'" fill="#FEF2F2" stroke="#E60012" stroke-width="1.2" stroke-dasharray="4 2"/><text x="'+(bodyLeftX+brakeW/2)+'" y="'+(cy+4)+'" text-anchor="middle" font-size="10" font-family="monospace" font-weight="700" fill="#E60012">BRAKE</text>' : '') +
+        '<rect x="'+(klX-12)+'" y="'+(cy-bodyH/2-16)+'" width="24" height="16" rx="2" fill="#E2E8F0" stroke="#0F172A" stroke-width="1.5"/>' +
+        '<rect x="'+flangeX+'" y="'+(cy-bodyH/2-8)+'" width="'+flangeW+'" height="'+(bodyH+16)+'" rx="1.5" fill="#E2E8F0" stroke="#0F172A" stroke-width="2"/>' +
+        '<rect x="'+(flangeX+flangeW)+'" y="'+(cy-bodyH*0.33)+'" width="6" height="'+(bodyH*0.66)+'" fill="#CBD5E1" stroke="#0F172A" stroke-width="1.5"/>' +
+        '<rect x="'+(flangeX+flangeW+6)+'" y="'+(cy-shaftH/2)+'" width="'+shaftW+'" height="'+shaftH+'" fill="#F1F5F9" stroke="#0F172A" stroke-width="2"/>' +
+        '<line x1="'+bodyLeftX+'" y1="'+(cy+bodyH/2+38)+'" x2="'+(flangeX+flangeW)+'" y2="'+(cy+bodyH/2+38)+'" stroke="#E60012" stroke-width="1.5"/>' +
+        '<text x="'+((bodyLeftX+flangeX+flangeW)/2)+'" y="'+(cy+bodyH/2+54)+'" text-anchor="middle" font-size="12" font-family="monospace" font-weight="700" fill="#E60012">L = '+activeL+' mm'+(showBrake?' (含煞車)':'')+'</text>' +
+        '<line x1="'+(flangeX+flangeW)+'" y1="'+(cy+bodyH/2+38)+'" x2="'+shaftEndX+'" y2="'+(cy+bodyH/2+38)+'" stroke="#334155" stroke-width="1.2"/>' +
+        '<text x="'+(flangeX+flangeW+shaftW/2+3)+'" y="'+(cy+bodyH/2+54)+'" text-anchor="middle" font-size="11" font-family="monospace" font-weight="700" fill="#0F172A">LR='+spec.shaftLenLR+'</text>' +
+        '<text x="'+(shaftEndX+8)+'" y="'+(cy+4)+'" font-size="11" font-family="monospace" font-weight="700" fill="#0F172A">φS='+spec.shaftDiaS+'</text>' +
+        '<text x="'+((klX+flangeX+flangeW)/2)+'" y="'+(cy-bodyH/2-28)+'" text-anchor="middle" font-size="11" font-family="monospace" font-weight="600" fill="#475569">KL = '+activeKL+' mm</text>' +
+        '<rect x="'+(fCx-fHalf)+'" y="'+(fCy-fHalf)+'" width="'+(fHalf*2)+'" height="'+(fHalf*2)+'" rx="8" fill="#F8FAFC" stroke="#0F172A" stroke-width="2"/>' +
+        '<circle cx="'+fCx+'" cy="'+fCy+'" r="'+pcdR+'" fill="none" stroke="#94A3B8" stroke-width="1" stroke-dasharray="4 3"/>' +
+        '<circle cx="'+fCx+'" cy="'+fCy+'" r="'+pilotR+'" fill="#FFFFFF" stroke="#334155" stroke-width="1.5"/>' +
+        '<circle cx="'+fCx+'" cy="'+fCy+'" r="'+shaftR+'" fill="#E2E8F0" stroke="#0F172A" stroke-width="1.8"/>' +
+        holes +
+        '<text x="'+fCx+'" y="'+(fCy-fHalf-12)+'" text-anchor="middle" font-size="12" font-family="monospace" font-weight="700" fill="#E60012">□LC = '+spec.flangeLC+' mm</text>' +
+        '<text x="'+fCx+'" y="'+(fCy+fHalf+20)+'" text-anchor="middle" font-size="11" font-family="monospace" fill="#334155">PCD φLA='+spec.pcdLA+' / 止口 φLB='+spec.pilotDiaLB+'</text>' +
+        '<text x="'+fCx+'" y="'+(fCy+fHalf+36)+'" text-anchor="middle" font-size="11" font-family="monospace" fill="#475569">'+esc(spec.mountHole)+'</text>' +
+      '</svg>';
+    }
+
+    function buildLinearSvg(spec, strokeMm) {
+      const minTrack = strokeMm + spec.primaryL;
+      return '<svg viewBox="0 0 700 280" class="dim-svg" role="img" aria-label="'+esc(spec.model)+' 外形尺寸圖">' +
+        '<rect width="700" height="280" fill="#FFFFFF"/>' +
+        '<text x="16" y="22" font-size="11" font-family="monospace" font-weight="700" fill="#64748B">LINEAR MOTOR · 側面與斷面圖 (mm)</text>' +
+        '<rect x="50" y="172" width="380" height="24" rx="2" fill="#E2E8F0" stroke="#0F172A" stroke-width="1.8"/>' +
+        '<rect x="135" y="106" width="180" height="58" rx="3" fill="#F8FAFC" stroke="#0F172A" stroke-width="2"/>' +
+        '<text x="225" y="139" text-anchor="middle" font-size="12" font-family="monospace" font-weight="700" fill="#0F172A">動子 L = '+spec.primaryL+' mm</text>' +
+        '<line x1="135" y1="86" x2="315" y2="86" stroke="#E60012" stroke-width="1.5"/>' +
+        '<text x="225" y="78" text-anchor="middle" font-size="12" font-family="monospace" font-weight="700" fill="#E60012">動子長 L = '+spec.primaryL+' mm</text>' +
+        '<line x1="50" y1="224" x2="430" y2="224" stroke="#0F172A" stroke-width="1.3"/>' +
+        '<text x="240" y="242" text-anchor="middle" font-size="11" font-family="monospace" font-weight="700" fill="#0F172A">建議磁軌總長 ≥ '+minTrack+' mm (行程 '+strokeMm+' + 動子 '+spec.primaryL+')</text>' +
+        '<rect x="525" y="172" width="106" height="22" rx="2" fill="#E2E8F0" stroke="#0F172A" stroke-width="1.8"/>' +
+        '<rect x="536" y="106" width="84" height="58" rx="2" fill="#F8FAFC" stroke="#0F172A" stroke-width="2"/>' +
+        '<text x="578" y="88" text-anchor="middle" font-size="11" font-family="monospace" font-weight="700" fill="#E60012">寬 W = '+spec.primaryW+' mm</text>' +
+        '<text x="578" y="220" text-anchor="middle" font-size="11" font-family="monospace" font-weight="700" fill="#334155">總高 H = '+spec.primaryH+' mm</text>' +
+        '<text x="578" y="238" text-anchor="middle" font-size="10" font-family="monospace" fill="#475569">氣隙 '+esc(spec.airGapMm)+' mm</text>' +
+      '</svg>';
+    }
+
+    function buildDdSvg(spec) {
+      const cx = 190, cy = 152, outR = 88;
+      const inR = Math.max(16, Math.min(54, (spec.hollowDia / spec.outerDiaD) * outR));
+      const pcdR = outR * 0.72;
+      const holes = [0,45,90,135,180,225,270,315].map(deg => {
+        const rad = deg * Math.PI / 180;
+        return '<circle cx="'+(cx+Math.cos(rad)*pcdR)+'" cy="'+(cy+Math.sin(rad)*pcdR)+'" r="3.8" fill="#FFFFFF" stroke="#0F172A" stroke-width="1.4"/>';
+      }).join('');
+      return '<svg viewBox="0 0 700 290" class="dim-svg" role="img" aria-label="'+esc(spec.model)+' 外形尺寸圖">' +
+        '<rect width="700" height="290" fill="#FFFFFF"/>' +
+        '<text x="16" y="22" font-size="11" font-family="monospace" font-weight="700" fill="#64748B">TOP VIEW · 俯視圖 (mm)</text>' +
+        '<text x="415" y="22" font-size="11" font-family="monospace" font-weight="700" fill="#64748B">SIDE VIEW · 側面高</text>' +
+        '<circle cx="'+cx+'" cy="'+cy+'" r="'+outR+'" fill="#F8FAFC" stroke="#0F172A" stroke-width="2"/>' +
+        '<circle cx="'+cx+'" cy="'+cy+'" r="'+pcdR+'" fill="none" stroke="#94A3B8" stroke-dasharray="4 3"/>' +
+        '<circle cx="'+cx+'" cy="'+cy+'" r="'+inR+'" fill="#FFFFFF" stroke="#E60012" stroke-width="2"/>' +
+        holes +
+        '<text x="'+cx+'" y="50" text-anchor="middle" font-size="12" font-family="monospace" font-weight="700" fill="#0F172A">外徑 φ'+spec.outerDiaD+' mm</text>' +
+        '<text x="'+cx+'" y="'+(cy+4)+'" text-anchor="middle" font-size="11" font-family="monospace" font-weight="700" fill="#E60012">φ'+spec.hollowDia+'</text>' +
+        '<rect x="445" y="106" width="160" height="86" rx="3" fill="#F8FAFC" stroke="#0F172A" stroke-width="2"/>' +
+        '<rect x="465" y="92" width="120" height="14" rx="2" fill="#E2E8F0" stroke="#0F172A" stroke-width="1.6"/>' +
+        '<text x="525" y="224" text-anchor="middle" font-size="12" font-family="monospace" font-weight="700" fill="#E60012">總高 L = '+spec.heightL+' mm</text>' +
+        '<text x="525" y="242" text-anchor="middle" font-size="11" font-family="monospace" fill="#475569">轉子螺絲孔 '+esc(spec.rotorTap)+'</text>' +
+      '</svg>';
+    }
+
+    function renderDimensions() {
+      const ctrlEl = document.getElementById('dim-controls');
+      const prevEl = document.getElementById('dim-preview');
+      const kw = (dimState.keyword || '').trim().toLowerCase();
+
+      let controlsHtml = '<div class="card"><div class="step-tag">SPEC INPUT</div><h2 class="card-title" style="margin-bottom:12px;">輸入馬達規格查詢尺寸圖</h2>' +
+        '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px;">' +
+          '<button type="button" class="kw-btn '+(dimState.category==='rotary'?'active':'')+'" onclick="dimState.category=\'rotary\';renderDimensions()">旋轉 HK</button>' +
+          '<button type="button" class="kw-btn '+(dimState.category==='linear'?'active':'')+'" onclick="dimState.category=\'linear\';renderDimensions()">線性 LM</button>' +
+          '<button type="button" class="kw-btn '+(dimState.category==='direct'?'active':'')+'" onclick="dimState.category=\'direct\';renderDimensions()">直驅 TM</button>' +
+        '</div>' +
+        '<label class="label-sm" style="margin-top:4px;">關鍵字 / 型號搜尋</label>' +
+        '<input type="text" style="width:100%;" value="'+esc(dimState.keyword)+'" placeholder="例：HK-KT43、22kW、HK-JT、LM-H4M..." oninput="dimState.keyword=this.value;renderDimensions()" />';
+
+      if (dimState.category === 'rotary') {
+        const filtered = DATA.rotaryDimensions.filter(d => {
+          const okS = dimState.series === 'ALL' || d.series === dimState.series;
+          const okP = dimState.powerKw === 'ALL' || Math.abs(d.powerKw - Number(dimState.powerKw)) < 0.01;
+          const okQ = !kw || d.model.toLowerCase().includes(kw) || d.series.toLowerCase().includes(kw) || (d.powerKw+'kw').includes(kw) || String(d.flangeLC).includes(kw);
+          return okS && okP && okQ;
+        });
+        const spec = filtered.find(d => d.id === dimState.selectedRotaryId) || filtered[0] || DATA.rotaryDimensions[0];
+        dimState.selectedRotaryId = spec.id;
+
+        const seriesList = ['ALL','HK-KT','HK-MT','HK-ST','HK-RT','HK-JT'];
+        const kwList = ['ALL',0.05,0.1,0.15,0.2,0.4,0.5,0.6,0.75,1.0,1.5,2.0,3.5,5.0,7.0,11.0,15.0,22.0];
+        controlsHtml +=
+          '<label class="label-sm">馬達系列</label><div class="kw-strip">' +
+            seriesList.map(s => '<button type="button" class="kw-btn '+(dimState.series===s?'active':'')+'" onclick="dimState.series=\''+s+'\';renderDimensions()">'+(s==='ALL'?'全部':s)+'</button>').join('') +
+          '</div>' +
+          '<label class="label-sm">額定輸出功率 (kW)</label>' +
+          '<select style="width:100%;" onchange="dimState.powerKw=this.value;renderDimensions()">' +
+            kwList.map(k => '<option value="'+k+'" '+(String(dimState.powerKw)===String(k)?'selected':'')+'>'+(k==='ALL'?'全部容量 (50W ~ 22kW)':(k<1?(k*1000)+' W ('+k+' kW)':k+' kW'))+'</option>').join('') +
+          '</select>' +
+          '<label class="label-sm">選擇馬達型號 (共 '+filtered.length+' 筆)</label>' +
+          '<select style="width:100%;font-family:var(--mono);" onchange="dimState.selectedRotaryId=this.value;renderDimensions()">' +
+            (filtered.length ? filtered : [spec]).map(d => '<option value="'+esc(d.id)+'" '+(d.id===spec.id?'selected':'')+'>'+esc(d.model)+' ('+d.powerKw+'kW / □'+d.flangeLC+')</option>').join('') +
+          '</select>' +
+          '<div style="margin-top:12px;"><label style="font-size:13px;cursor:pointer;"><input type="checkbox" '+(dimState.withBrake?'checked':'')+' '+(spec.bodyLBrake===null?'disabled':'')+' onchange="dimState.withBrake=this.checked;renderDimensions()" /> 顯示附電磁煞車尺寸 (B)'+(spec.bodyLBrake===null?' — 此機種無煞車':'')+'</label></div>' +
+          '</div>';
+
+        const showB = dimState.withBrake && spec.bodyLBrake !== null;
+        const activeL = showB ? spec.bodyLBrake : spec.bodyL;
+        const activeKL = (showB && spec.connKLBrake !== null) ? spec.connKLBrake : spec.connKL;
+
+        prevEl.innerHTML =
+          '<div class="card">' +
+            '<div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;margin-bottom:12px;">' +
+              '<div><div class="mono" style="font-size:18px;font-weight:700;">'+esc(showB ? spec.model.replace(/\(B\)/g,'B') : spec.model.replace(/\(B\)/g,''))+'</div>' +
+              '<div style="font-size:12px;color:#64748B;">'+esc(spec.series)+' · '+spec.powerKw+' kW · '+spec.ratedSpeedRpm+' r/min · '+esc(spec.ipRating)+' · 原廠型錄 p.'+spec.catalogPage+'</div></div>' +
+            '</div>' +
+            buildRotarySvg(spec, dimState.withBrake) +
+            '<div class="metrics-4">' +
+              '<div class="metric-box"><div class="k">法蘭尺寸 □LC</div><div class="v">□'+spec.flangeLC+' mm</div></div>' +
+              '<div class="metric-box"><div class="k">全長 L '+(showB?'(含煞車)':'(無煞車)')+'</div><div class="v" style="color:#E60012;">'+activeL+' mm</div></div>' +
+              '<div class="metric-box"><div class="k">軸徑 φS × 軸長 LR</div><div class="v">φ'+spec.shaftDiaS+' × '+spec.shaftLenLR+'</div></div>' +
+              '<div class="metric-box"><div class="k">防護等級</div><div class="v">'+esc(spec.ipRating)+'</div></div>' +
+            '</div>' +
+            '<div class="table-wrap" style="margin-top:14px;"><table class="dim-table"><thead><tr><th>代號</th><th>項目名稱</th><th>尺寸數值 (mm)</th></tr></thead><tbody>' +
+              '<tr><td class="mono"><strong>□LC</strong></td><td>法蘭外徑</td><td class="mono">'+spec.flangeLC+'</td></tr>' +
+              '<tr><td class="mono"><strong>L</strong></td><td>馬達本體全長 (無煞車 / 含煞車)</td><td class="mono">'+spec.bodyL+' / '+(spec.bodyLBrake===null?'無煞車規格':spec.bodyLBrake)+'</td></tr>' +
+              '<tr><td class="mono"><strong>KL</strong></td><td>法蘭面至接頭中心距</td><td class="mono">'+activeKL+'</td></tr>' +
+              '<tr><td class="mono"><strong>LE</strong></td><td>法蘭止口厚度</td><td class="mono">'+spec.flangeThickLE+'</td></tr>' +
+              '<tr><td class="mono"><strong>φS</strong></td><td>出力軸徑與公差</td><td class="mono">φ'+spec.shaftDiaS+' ('+esc(spec.shaftTolerance)+')</td></tr>' +
+              '<tr><td class="mono"><strong>LR</strong></td><td>出力軸突出長度</td><td class="mono">'+spec.shaftLenLR+'</td></tr>' +
+              '<tr><td class="mono"><strong>φLB</strong></td><td>法蘭止口直徑 (h7)</td><td class="mono">φ'+spec.pilotDiaLB+'</td></tr>' +
+              '<tr><td class="mono"><strong>φLA</strong></td><td>安裝孔節圓直徑 (PCD)</td><td class="mono">φ'+spec.pcdLA+'</td></tr>' +
+              '<tr><td class="mono"><strong>LZ</strong></td><td>法蘭安裝孔規格</td><td class="mono">'+esc(spec.mountHole)+'</td></tr>' +
+              '<tr><td class="mono"><strong>Key</strong></td><td>軸端鍵槽</td><td class="mono">'+esc(spec.keywaySpec)+'</td></tr>' +
+            '</tbody></table></div>' +
+            (spec.notes ? '<div class="remark-box" style="margin-top:10px;">備註：'+esc(spec.notes)+'</div>' : '') +
+          '</div>';
+      } else if (dimState.category === 'linear') {
+        const filtered = DATA.linearDimensions.filter(d => !kw || d.series.toLowerCase().includes(kw) || d.model.toLowerCase().includes(kw) || d.coreType.toLowerCase().includes(kw));
+        const spec = filtered.find(d => d.id === dimState.selectedLinearId) || filtered[0] || DATA.linearDimensions[0];
+        dimState.selectedLinearId = spec.id;
+        controlsHtml +=
+          '<label class="label-sm">選擇線性馬達型號</label>' +
+          '<select style="width:100%;font-family:var(--mono);" onchange="dimState.selectedLinearId=this.value;renderDimensions()">' +
+            (filtered.length ? filtered : [spec]).map(d => '<option value="'+esc(d.id)+'" '+(d.id===spec.id?'selected':'')+'>'+esc(d.series)+' — '+esc(d.model)+'</option>').join('') +
+          '</select>' +
+          '<label class="label-sm">設計有效行程 (mm)</label>' +
+          '<input type="number" min="50" max="10000" step="50" style="width:100%;" value="'+dimState.strokeMm+'" onchange="dimState.strokeMm=Math.max(50,Number(this.value)||500);renderDimensions()" />' +
+          '</div>';
+
+        prevEl.innerHTML =
+          '<div class="card">' +
+            '<div class="mono" style="font-size:18px;font-weight:700;">'+esc(spec.model)+'</div>' +
+            '<div style="font-size:12px;color:#64748B;margin-bottom:12px;">'+esc(spec.series)+' · '+esc(spec.coreType)+' · 連續 '+spec.contThrustN+' N / 最大 '+spec.maxThrustN+' N · 原廠型錄 p.'+spec.catalogPage+'</div>' +
+            buildLinearSvg(spec, dimState.strokeMm) +
+            '<div class="metrics-4">' +
+              '<div class="metric-box"><div class="k">動子長度 L</div><div class="v" style="color:#E60012;">'+spec.primaryL+' mm</div></div>' +
+              '<div class="metric-box"><div class="k">動子寬度 W</div><div class="v">'+spec.primaryW+' mm</div></div>' +
+              '<div class="metric-box"><div class="k">組合總高 H</div><div class="v">'+spec.primaryH+' mm</div></div>' +
+              '<div class="metric-box"><div class="k">建議磁軌總長</div><div class="v">≥ '+(dimState.strokeMm+spec.primaryL)+' mm</div></div>' +
+            '</div>' +
+            '<div class="remark-box" style="margin-top:12px;">固定螺栓 '+esc(spec.mountBolts)+' · 磁軌 '+esc(spec.secondaryModel)+' (單節長 '+spec.secondaryPitchMm+' mm × 寬 '+spec.secondaryW+' mm × 高 '+spec.secondaryH+' mm) · 氣隙 '+spec.airGapMm+' mm · '+esc(spec.notes)+'</div>' +
+          '</div>';
+      } else {
+        const filtered = DATA.directDriveDimensions.filter(d => !kw || d.series.toLowerCase().includes(kw) || d.model.toLowerCase().includes(kw));
+        const spec = filtered.find(d => d.id === dimState.selectedDdId) || filtered[0] || DATA.directDriveDimensions[0];
+        dimState.selectedDdId = spec.id;
+        controlsHtml +=
+          '<label class="label-sm">選擇直驅馬達型號</label>' +
+          '<select style="width:100%;font-family:var(--mono);" onchange="dimState.selectedDdId=this.value;renderDimensions()">' +
+            (filtered.length ? filtered : [spec]).map(d => '<option value="'+esc(d.id)+'" '+(d.id===spec.id?'selected':'')+'>'+esc(d.model)+' ('+d.ratedTorqueNm+' N·m)</option>').join('') +
+          '</select></div>';
+
+        prevEl.innerHTML =
+          '<div class="card">' +
+            '<div class="mono" style="font-size:18px;font-weight:700;">'+esc(spec.model)+'</div>' +
+            '<div style="font-size:12px;color:#64748B;margin-bottom:12px;">'+esc(spec.series)+' · '+esc(spec.ipRating)+' · 額定 '+spec.ratedTorqueNm+' N·m / 最大 '+spec.maxTorqueNm+' N·m · 原廠型錄 p.'+spec.catalogPage+'</div>' +
+            buildDdSvg(spec) +
+            '<div class="metrics-4">' +
+              '<div class="metric-box"><div class="k">外徑 φD / 法蘭 □</div><div class="v">φ'+spec.outerDiaD+' / □'+spec.flangeSq+'</div></div>' +
+              '<div class="metric-box"><div class="k">中空貫通徑</div><div class="v" style="color:#E60012;">φ'+spec.hollowDia+' mm</div></div>' +
+              '<div class="metric-box"><div class="k">馬達總高 L</div><div class="v">'+spec.heightL+' mm</div></div>' +
+              '<div class="metric-box"><div class="k">轉子/底座 PCD</div><div class="v">φ'+spec.rotorPcd+' / φ'+spec.basePcd+'</div></div>' +
+            '</div>' +
+            '<div class="remark-box" style="margin-top:12px;">轉子安裝孔 '+esc(spec.rotorTap)+' · 底座安裝孔 '+esc(spec.mountHoles)+' · '+esc(spec.notes)+'</div>' +
+          '</div>';
+      }
+
+      ctrlEl.innerHTML = controlsHtml;
+    }
+
+    function switchSpec(spec) {
+      currentSpec = spec;
+      document.querySelectorAll('[data-spec]').forEach(b => b.classList.toggle('active', b.getAttribute('data-spec') === spec));
+      renderSpecs();
+    }
+
+    function renderSpecs() {
+      const q = (document.getElementById('spec-search').value || '').trim().toLowerCase();
+      let html = '';
+      if (currentSpec === 'amplifiers') {
+        const rows = DATA.amplifiers.filter(a => !q || a.series.toLowerCase().includes(q) || a.typeLabel.toLowerCase().includes(q) || a.protocols.toLowerCase().includes(q));
+        html = '<div class="table-wrap"><table><thead><tr><th>系列</th><th>電壓/容量</th><th>協定與最小週期</th><th>全閉環與安全</th></tr></thead><tbody>' +
+          rows.map(a => '<tr><td><strong class="mono">'+esc(a.series)+'</strong><div style="font-size:12px;color:#64748B;">'+esc(a.typeLabel)+'</div></td><td class="mono">'+esc(a.voltage)+'</td><td>'+esc(a.protocols)+'<div class="mono" style="font-size:12px;color:#64748B;">Min: '+esc(a.minCycle)+'</div></td><td style="font-size:12px;">'+esc(a.fullClosedSupport)+'<br/>'+esc(a.safetyFunctions)+'</td></tr>').join('') +
+          '</tbody></table></div>';
+      } else if (currentSpec === 'controllers') {
+        const rows = DATA.controllers.filter(c => !q || c.model.toLowerCase().includes(q) || c.series.toLowerCase().includes(q));
+        html = '<div class="table-wrap"><table><thead><tr><th>型號</th><th>軸數上限</th><th>最小週期</th><th>特性</th></tr></thead><tbody>' +
+          rows.map(c => '<tr><td><strong class="mono">'+esc(c.model)+'</strong><div style="font-size:12px;color:#64748B;">'+esc(c.series)+'</div></td><td class="mono">'+esc(c.maxAxes)+'</td><td class="mono">'+esc(c.minCycleUs)+'</td><td style="font-size:12px;">'+esc(c.highlights)+'</td></tr>').join('') +
+          '</tbody></table></div>';
+      } else if (currentSpec === 'rotary') {
+        const rows = DATA.rotaryMotors.filter(m => !q || m.model.toLowerCase().includes(q) || m.series.toLowerCase().includes(q));
+        html = '<div class="table-wrap"><table><thead><tr><th>馬達型號</th><th>功率 (kW)</th><th>額定/最大轉矩 (N·m)</th><th>轉速 (r/min)</th><th>搭配放大器</th><th>尺寸圖</th></tr></thead><tbody>' +
+          rows.map(m => '<tr><td class="mono"><strong>'+esc(m.model)+'</strong><div style="font-size:11px;color:#64748B;">'+esc(m.voltage+' · '+m.inertiaLabel)+'</div></td><td class="mono">'+m.powerKw+'</td><td class="mono">'+m.ratedTorqueNm+' / '+m.maxTorqueNm+'</td><td class="mono">'+m.ratedSpeedRpm+' / '+m.maxSpeedRpm+'</td><td class="mono" style="font-size:12px;">'+esc(m.standardAmp200 || m.standardAmp400)+'</td><td><button type="button" class="btn-sm" onclick="openDimensionFor(\'rotary\',\''+esc(m.model)+'\','+m.powerKw+',false,500)">尺寸圖</button></td></tr>').join('') +
+          '</tbody></table></div>';
+      } else {
+        const rows = DATA.linearMotors.filter(l => !q || l.series.toLowerCase().includes(q) || l.coreType.toLowerCase().includes(q));
+        const dds = DATA.directDriveMotors.filter(d => !q || d.series.toLowerCase().includes(q) || d.model.toLowerCase().includes(q));
+        html = '<div class="table-wrap" style="margin-bottom:16px;"><table><thead><tr><th>線性系列</th><th>結構</th><th>代表推力 (連續/最大)</th><th>最高速度</th><th>尺寸圖</th></tr></thead><tbody>' +
+          rows.map(l => '<tr><td class="mono"><strong>'+esc(l.series)+'</strong><div style="font-size:11px;color:#64748B;">'+esc(l.model)+'</div></td><td>'+esc(l.coreType)+'</td><td class="mono">'+l.contThrustN+' / '+l.maxThrustN+' N</td><td class="mono">'+l.maxSpeedMs+' m/s</td><td><button type="button" class="btn-sm" onclick="openDimensionFor(\'linear\',\''+esc(l.series)+'\',0,false,500)">尺寸圖</button></td></tr>').join('') +
+          '</tbody></table></div>' +
+          '<div class="table-wrap"><table><thead><tr><th>直驅系列</th><th>外徑 / 中空徑 (mm)</th><th>代表轉矩 (額定/最大)</th><th>編碼器</th><th>尺寸圖</th></tr></thead><tbody>' +
+          dds.map(d => '<tr><td class="mono"><strong>'+esc(d.series)+'</strong><div style="font-size:11px;color:#64748B;">'+esc(d.model)+'</div></td><td class="mono">φ'+d.outerDiaMm+' / φ'+d.hollowDiaMm+'</td><td class="mono">'+d.ratedTorqueNm+' / '+d.maxTorqueNm+' N·m</td><td class="mono" style="font-size:12px;">'+esc(d.encoderRes)+'</td><td><button type="button" class="btn-sm" onclick="openDimensionFor(\'direct\',\''+esc(d.series)+'\',0,false,500)">尺寸圖</button></td></tr>').join('') +
+          '</tbody></table></div>';
+      }
+      document.getElementById('specs-table-container').innerHTML = html;
+    }
+
+    function renderDecoder() {
+      document.getElementById('decoder-presets').innerHTML = DATA.decoderPresets.map((p, idx) =>
+        '<button type="button" class="kw-btn '+(idx===activePresetIdx && !document.getElementById('decoder-input').value?'active':'')+'" onclick="activePresetIdx='+idx+';document.getElementById(\'decoder-input\').value=\'\';renderDecoder()">'+esc(p.fullCode)+'</button>'
+      ).join('');
+      const custom = (document.getElementById('decoder-input').value || '').trim().toUpperCase();
+      let segments = DATA.decoderPresets[activePresetIdx].segments;
+      if (custom) {
+        segments = [];
+        Object.keys(DATA.glossary).forEach(tok => {
+          if (custom.includes(tok)) segments.push({ code: tok, label: DATA.glossary[tok].title, meaning: DATA.glossary[tok].detail });
+        });
+        if (!segments.length) segments.push({ code: custom, label: '自訂輸入', meaning: '請輸入標準前綴如 MR-J5、W2、G、4、-RJ、-HS、-N1 以檢視說明。' });
+      }
+      document.getElementById('decoder-result').innerHTML = '<div class="bom-list">' +
+        segments.map(s => '<div class="bom-item"><strong class="mono" style="color:#E60012;font-size:15px;">'+esc(s.code)+'</strong> <span style="font-weight:600;margin-left:8px;">'+esc(s.label)+'</span><div style="font-size:13px;color:#475569;margin-top:4px;">'+esc(s.meaning)+'</div></div>').join('') +
+        '</div>';
+      document.getElementById('decoder-glossary').innerHTML = '<div class="bom-list">' +
+        Object.entries(DATA.glossary).map(([k,v]) => '<div class="bom-item"><span class="mono" style="font-weight:700;display:inline-block;min-width:96px;">'+esc(k)+'</span><strong>'+esc(v.title)+'</strong><div style="font-size:12px;color:#475569;margin-top:2px;">'+esc(v.detail)+'</div></div>').join('') +
+        '</div>';
+    }
+
+    renderWizard();
+    renderDimensions();
+    renderSpecs();
+    renderDecoder();
+  </script>
+</body>
+</html>
