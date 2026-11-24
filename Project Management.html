@@ -1,0 +1,1744 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PM 專案管理與 Mail2000 進度提醒系統（獨立網頁版）</title>
+  <style>
+    :root {
+      --bg: #F8FAFC;
+      --surface: #FFFFFF;
+      --border: #E2E8F0;
+      --border-strong: #CBD5E1;
+      --text: #0F172A;
+      --muted: #475569;
+      --subtle: #64748B;
+      --primary: #1D4ED8;
+      --primary-hover: #1E40AF;
+      --danger: #DC2626;
+      --danger-bg: #FEF2F2;
+      --warn: #D97706;
+      --warn-bg: #FFFBEB;
+      --success: #15803D;
+      --success-bg: #F0FDF4;
+      --font-sans: "Noto Sans TC", "Microsoft JhengHei", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-sans);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+    /* Top Bar */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      height: 58px;
+    }
+    .topbar-inner {
+      max-width: 1440px;
+      height: 100%;
+      margin: 0 auto;
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+    .brand {
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .nav-tabs {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+    .nav-btn {
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      padding: 6px 2px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--muted);
+      cursor: pointer;
+      white-space: nowrap;
+      font-family: inherit;
+    }
+    .nav-btn:hover { color: var(--text); }
+    .nav-btn.active {
+      color: var(--text);
+      font-weight: 600;
+      border-bottom-color: var(--primary);
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 9px 14px;
+      min-height: 40px;
+      font-size: 13px;
+      font-weight: 500;
+      border-radius: 8px;
+      border: 1px solid var(--border-strong);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      white-space: nowrap;
+      font-family: inherit;
+      text-decoration: none;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .btn:hover { background: #F1F5F9; }
+    .btn-primary {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #FFFFFF;
+    }
+    .btn-primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
+    .btn-dark {
+      background: #0F172A;
+      border-color: #0F172A;
+      color: #FFFFFF;
+    }
+    .btn-dark:hover { background: #1E293B; }
+    .btn-danger-outline {
+      color: var(--danger);
+      border-color: #FCA5A5;
+      background: var(--surface);
+    }
+    .btn-danger-outline:hover { background: var(--danger-bg); }
+    .btn-danger {
+      background: var(--danger);
+      border-color: var(--danger);
+      color: #FFFFFF;
+    }
+    .btn-danger:hover { background: #B91C1C; }
+    .btn-sm {
+      padding: 6px 10px;
+      min-height: 34px;
+      font-size: 12px;
+    }
+
+    /* Main Container */
+    .container {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 24px 20px 48px;
+    }
+
+    .mobile-tabs {
+      display: none;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 4px;
+      background: #E2E8F0;
+      padding: 4px;
+      border-radius: 8px;
+      margin-bottom: 18px;
+    }
+    .mobile-tabs button {
+      border: none;
+      background: transparent;
+      padding: 10px 6px;
+      min-height: 44px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted);
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .mobile-tabs button.active {
+      background: var(--surface);
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .page-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+    .page-kicker {
+      font-size: 12px;
+      color: var(--subtle);
+      margin-bottom: 4px;
+    }
+    .page-head h1 {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+    .page-head p {
+      margin: 6px 0 0;
+      font-size: 13px;
+      color: var(--subtle);
+    }
+    .head-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    /* KPI Strip */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+    .kpi-cell {
+      padding: 16px 20px;
+      border-right: 1px solid var(--border);
+    }
+    .kpi-cell:last-child { border-right: none; }
+    .kpi-label { font-size: 12px; color: var(--subtle); }
+    .kpi-val {
+      margin-top: 4px;
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+    .kpi-num { font-size: 26px; font-weight: 700; }
+    .kpi-sub { font-size: 12px; color: #94A3B8; }
+
+    /* Filters */
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .search-input {
+      flex: 1;
+      min-width: 240px;
+      max-width: 420px;
+      padding: 10px 14px;
+      font-size: 14px;
+      border: 1px solid var(--border-strong);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--text);
+      font-family: inherit;
+    }
+    .search-input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.12);
+    }
+    .filter-groups {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .segmented {
+      display: inline-flex;
+      padding: 4px;
+      background: #E2E8F0;
+      border-radius: 8px;
+      gap: 2px;
+    }
+    .segmented button {
+      border: none;
+      background: transparent;
+      padding: 7px 12px;
+      min-height: 36px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--muted);
+      border-radius: 6px;
+      cursor: pointer;
+      white-space: nowrap;
+      font-family: inherit;
+    }
+    .segmented button.active {
+      background: var(--surface);
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    /* Desktop Table */
+    .table-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .table-scroll { overflow-x: auto; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 14px;
+    }
+    th {
+      padding: 12px 14px;
+      background: #F8FAFC;
+      border-bottom: 1px solid var(--border);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--subtle);
+      white-space: nowrap;
+    }
+    td {
+      padding: 14px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr.row-stale { background: #FFF5F5; }
+    tr.row-closed { background: #F8FAFC; color: var(--subtle); }
+    tr.divider-row td {
+      background: #F1F5F9;
+      padding: 8px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--subtle);
+    }
+
+    .prio-high { color: var(--danger); font-weight: 700; }
+    .prio-medium { color: var(--warn); font-weight: 700; }
+    .prio-low { color: var(--muted); font-weight: 600; }
+    .text-closed { text-decoration: line-through; color: var(--subtle); }
+    .subtext { font-size: 12px; color: var(--subtle); margin-top: 3px; }
+    .stale-note { font-size: 12px; font-weight: 600; color: var(--danger); margin-top: 4px; }
+
+    .prog-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 5px;
+    }
+    .prog-track {
+      width: 100px;
+      height: 6px;
+      background: #E2E8F0;
+      border-radius: 99px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .prog-fill {
+      height: 100%;
+      background: var(--primary);
+      border-radius: 99px;
+    }
+    .prog-fill.stale { background: var(--danger); }
+    .prog-fill.closed { background: var(--success); }
+    .row-actions {
+      display: inline-flex;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    /* Mobile Cards */
+    .mobile-cards { display: none; gap: 12px; flex-direction: column; }
+    .m-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .m-card.stale { border-color: #FCA5A5; }
+    .m-card.closed { opacity: 0.8; }
+    .m-top {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
+    .m-title {
+      margin: 0 0 8px;
+      font-size: 16px;
+      font-weight: 700;
+      line-height: 1.4;
+    }
+    .m-meta {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px 14px;
+      padding: 12px 0;
+      margin: 12px 0;
+      border-top: 1px solid #F1F5F9;
+      border-bottom: 1px solid #F1F5F9;
+      font-size: 12px;
+    }
+    .m-meta label { display: block; color: #94A3B8; margin-bottom: 2px; }
+    .m-actions {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .m-actions .btn { min-height: 44px; width: 100%; }
+
+    /* Panel Sections */
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+    .panel-head {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .panel-head h2 { margin: 0; font-size: 16px; font-weight: 700; }
+    .panel-head p { margin: 4px 0 0; font-size: 12px; color: var(--subtle); }
+    .panel-body { padding: 20px; }
+    .stale-item {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+    }
+    .stale-item:last-child { border-bottom: none; }
+
+    /* Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 60;
+      background: rgba(15, 23, 42, 0.48);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      width: 100%;
+      max-width: 680px;
+      max-height: 92vh;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 20px 50px rgba(15, 23, 42, 0.22);
+    }
+    .modal-head {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .modal-head h3 { margin: 0; font-size: 17px; font-weight: 700; }
+    .modal-body { padding: 20px; overflow-y: auto; }
+    .modal-foot {
+      padding: 14px 20px;
+      border-top: 1px solid var(--border);
+      background: #F8FAFC;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+    }
+    .form-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+    .form-field label { font-size: 13px; font-weight: 500; color: #334155; }
+    .form-field input, .form-field select, .form-field textarea {
+      width: 100%;
+      padding: 10px 12px;
+      font-size: 14px;
+      border: 1px solid var(--border-strong);
+      border-radius: 8px;
+      font-family: inherit;
+      color: var(--text);
+      background: var(--surface);
+    }
+    .form-field input:focus, .form-field select:focus, .form-field textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.12);
+    }
+
+    .sync-box {
+      background: #F8FAFC;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 18px;
+    }
+    .sync-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .member-list {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .member-item {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 13px;
+    }
+    .member-item:last-child { border-bottom: none; }
+
+    .email-preview {
+      background: #F8FAFC;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+      white-space: pre-wrap;
+      font-size: 13px;
+      line-height: 1.65;
+      color: #1E293B;
+      max-height: 260px;
+      overflow-y: auto;
+    }
+
+    .toast {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      z-index: 80;
+      background: #0F172A;
+      color: #FFFFFF;
+      padding: 12px 18px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      display: none;
+      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.25);
+    }
+    .toast.show { display: block; }
+    .empty-box {
+      padding: 48px 20px;
+      text-align: center;
+      color: var(--subtle);
+      font-size: 14px;
+    }
+
+    @media (max-width: 1024px) {
+      .table-card { display: none; }
+      .mobile-cards { display: flex; }
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+      .kpi-cell { border-bottom: 1px solid var(--border); }
+    }
+    @media (max-width: 768px) {
+      .nav-tabs { display: none; }
+      .mobile-tabs { display: grid; }
+      .form-grid { grid-template-columns: 1fr; }
+      .topbar-inner { padding: 0 14px; }
+      .container { padding: 16px 14px 40px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">PM 專案追蹤系統</div>
+      <nav class="nav-tabs" aria-label="主導覽">
+        <button type="button" class="nav-btn active" data-tab="board">專案管理表</button>
+        <button type="button" class="nav-btn" data-tab="reminders">郵件提醒中心 <span id="navStaleCount" class="mono"></span></button>
+        <button type="button" class="nav-btn" data-tab="settings">Mail2000 與備份設定</button>
+      </nav>
+      <button type="button" class="btn btn-primary" id="btnAddProject">+ 新增專案</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="mobile-tabs">
+      <button type="button" class="active" data-tab="board">專案管理表</button>
+      <button type="button" data-tab="reminders">提醒中心 <span id="mobStaleCount"></span></button>
+      <button type="button" data-tab="settings">Mail2000 設定</button>
+    </div>
+
+    <div class="page-head">
+      <div>
+        <div class="page-kicker" id="teamKicker">PM 團隊專案同步看板 · 獨立互動網頁版</div>
+        <h1 id="pageTitle">主管交辦專案總覽</h1>
+        <p id="pageDesc">進行中專案依「高 → 中 → 低」優先順序排列，已結案專案自動移至最後面；三個工作天無進度即標記通知。</p>
+      </div>
+      <div class="head-actions">
+        <button type="button" class="btn" id="btnTeamSync">
+          團隊同步成員 (<span id="teamCountBadge" class="mono">1</span>)
+        </button>
+        <button type="button" class="btn btn-danger-outline" id="btnBatchRemind" style="display:none;">發送停滯提醒信</button>
+        <button type="button" class="btn" id="btnExportCsv">匯出 CSV</button>
+      </div>
+    </div>
+
+    <section class="kpi-grid" aria-label="專案摘要指標">
+      <div class="kpi-cell">
+        <div class="kpi-label">進行中專案</div>
+        <div class="kpi-val"><span class="kpi-num mono" id="kpiActive">0</span><span class="kpi-sub">項追蹤中</span></div>
+      </div>
+      <div class="kpi-cell">
+        <div class="kpi-label">高優先順序</div>
+        <div class="kpi-val"><span class="kpi-num mono" style="color:var(--danger);" id="kpiHigh">0</span><span class="kpi-sub">優先置頂</span></div>
+      </div>
+      <div class="kpi-cell">
+        <div class="kpi-label" id="kpiStaleLabel">≥ 3 工作天無進度</div>
+        <div class="kpi-val"><span class="kpi-num mono" id="kpiStale">0</span><span class="kpi-sub">待寄信通知</span></div>
+      </div>
+      <div class="kpi-cell">
+        <div class="kpi-label">已結案（自動置底）</div>
+        <div class="kpi-val"><span class="kpi-num mono" style="color:var(--subtle);" id="kpiClosed">0</span><span class="kpi-sub">已歸檔</span></div>
+      </div>
+    </section>
+
+    <!-- TAB 1: Project Board -->
+    <section id="view-board">
+      <div class="toolbar">
+        <input type="text" id="searchInput" class="search-input" placeholder="搜尋專案名稱、提出人員、負責人或備註..." />
+        <div class="filter-groups">
+          <div class="segmented" id="statusFilters">
+            <button type="button" class="active" data-status="all">全部</button>
+            <button type="button" data-status="in_progress">進行中</button>
+            <button type="button" data-status="stale">停滯≥3天</button>
+            <button type="button" data-status="closed">已結案</button>
+          </div>
+          <div class="segmented" id="priorityFilters">
+            <button type="button" class="active" data-priority="all">全優先</button>
+            <button type="button" data-priority="high">高</button>
+            <button type="button" data-priority="medium">中</button>
+            <button type="button" data-priority="low">低</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>優先順序</th>
+                <th>專案名稱</th>
+                <th>接收日期</th>
+                <th>專案提出人員</th>
+                <th>負責人</th>
+                <th>截止日期</th>
+                <th>目前進度</th>
+                <th>備註</th>
+                <th style="text-align:right;">操作</th>
+              </tr>
+            </thead>
+            <tbody id="desktopTbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="mobile-cards" id="mobileCards"></div>
+    </section>
+
+    <!-- TAB 2: Reminder Center -->
+    <section id="view-reminders" style="display:none;">
+      <div class="panel">
+        <div class="panel-head">
+          <div>
+            <h2>三個工作天無進度專案（待發信清單）</h2>
+            <p>僅計算週一至週五工作天，已結案專案自動排除。可直接呼叫公司 Mail2000 郵件軟體、複製全文，或透過已設定之 Mail2000 SMTP API 寄送。</p>
+          </div>
+        </div>
+        <div id="staleListContainer"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <div>
+            <h2>發信通知紀錄</h2>
+            <p>儲存在本機瀏覽器之提醒歷程紀錄。</p>
+          </div>
+        </div>
+        <div class="table-scroll" id="logsContainer"></div>
+      </div>
+    </section>
+
+    <!-- TAB 3: Mail2000 & Backup Settings -->
+    <section id="view-settings" style="display:none;">
+      <div class="panel">
+        <div class="panel-head">
+          <div>
+            <h2>Mail2000 提醒規則與信件範本設定</h2>
+            <p>獨立 HTML 版支援一鍵開啟本機 Mail2000 / Outlook 郵件草稿、一鍵複製貼至 Mail2000 網頁信箱，亦可填寫公司內部 SMTP 伺服器 API 網址實現一鍵自動寄信。</p>
+          </div>
+        </div>
+        <form class="panel-body" id="settingsForm">
+          <div class="form-grid">
+            <div class="form-field">
+              <label for="setThreshold">無進度提醒門檻（工作天）</label>
+              <input type="number" id="setThreshold" min="1" max="30" class="mono" />
+            </div>
+            <div class="form-field">
+              <label for="setPrefix">提醒信主旨前綴</label>
+              <input type="text" id="setPrefix" maxlength="40" />
+            </div>
+          </div>
+          <div class="form-field">
+            <label for="setCc">預設副本 CC 信箱（例如 PM 經理，多筆以逗號分隔）</label>
+            <input type="text" id="setCc" class="mono" placeholder="pm.manager@company.com.tw" />
+          </div>
+          <div class="form-field">
+            <label for="setClosing">提醒信結尾叮嚀語</label>
+            <textarea id="setClosing" rows="3"></textarea>
+          </div>
+          <div class="form-field">
+            <label for="setApiUrl">選填：公司內部 Mail2000 SMTP 後端 API 端點（例如 https://your-server/api/reminders/send-direct）</label>
+            <input type="url" id="setApiUrl" class="mono" placeholder="留空時使用本機郵件軟體 (mailto:) 與複製全文功能" />
+          </div>
+          <button type="submit" class="btn btn-primary">儲存設定</button>
+        </form>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <div>
+            <h2>資料備份與團隊同步還原（JSON）</h2>
+            <p>獨立 HTML 檔將資料安全存於瀏覽器 localStorage，離線交換資料時可匯出或匯入 JSON 同步包（含所有專案與團隊成員）。</p>
+          </div>
+        </div>
+        <div class="panel-body" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
+          <button type="button" class="btn" id="btnExportJson">下載團隊 JSON 同步包</button>
+          <label class="btn" style="cursor:pointer;">
+            匯入 JSON 同步包還原
+            <input type="file" id="importJsonInput" accept="application/json" style="display:none;" />
+          </label>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Team Sync Members Modal -->
+  <div class="modal-backdrop" id="teamModal">
+    <div class="modal" role="dialog" aria-modal="true">
+      <div class="modal-head">
+        <h3>團隊同步成員與邀請設定</h3>
+        <button type="button" class="btn btn-sm" data-close="teamModal">關閉</button>
+      </div>
+      <div class="modal-body">
+        <div class="sync-box">
+          <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;font-size:12px;color:var(--muted);">
+            <span>雲端即時同步邀請連結（傳給團隊即可多人即時同步）</span>
+            <span>目前加入碼：<strong id="teamCodeDisplay" class="mono" style="color:var(--text);">PM2026</strong></span>
+          </div>
+          <div class="sync-row">
+            <input type="text" id="teamInviteUrlInput" readonly class="mono" style="flex:1;min-width:200px;padding:9px 10px;font-size:12px;border:1px solid var(--border-strong);border-radius:8px;background:#FFF;" />
+            <button type="button" class="btn btn-primary btn-sm" id="btnCopyInviteUrl">複製邀請連結</button>
+            <button type="button" class="btn btn-sm" id="btnCopyInviteCode">複製代碼</button>
+            <a id="btnOpenCloudApp" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-sm" style="display:none;">開啟雲端同步版</a>
+          </div>
+          <div style="font-size:12px;color:var(--subtle);margin-top:8px;line-height:1.5;">
+            註：單一離線 HTML 檔的資料儲存於本機瀏覽器；若需多位同事在各自手機與電腦「即時同步」，請複製上方雲端邀請連結分享給團隊登入，或使用下方 JSON 同步包交換資料。
+          </div>
+        </div>
+
+        <form id="teamMetaForm" class="form-grid" style="align-items:end;margin-bottom:16px;">
+          <div class="form-field" style="margin-bottom:0;">
+            <label for="tmName">團隊看板名稱</label>
+            <input type="text" id="tmName" maxlength="80" />
+          </div>
+          <div style="display:flex;gap:8px;align-items:flex-end;">
+            <div class="form-field" style="flex:1;margin-bottom:0;">
+              <label for="tmCode">團隊加入碼</label>
+              <input type="text" id="tmCode" maxlength="24" class="mono" />
+            </div>
+            <button type="submit" class="btn btn-dark">更新</button>
+          </div>
+        </form>
+
+        <form id="addMemberForm" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;padding-top:14px;border-top:1px solid var(--border);">
+          <input type="text" id="newMemberName" placeholder="新增成員姓名（例：林佳樺）" maxlength="60" style="flex:1;min-width:160px;padding:9px 12px;font-size:13px;border:1px solid var(--border-strong);border-radius:8px;font-family:inherit;" required />
+          <select id="newMemberRole" style="padding:9px 12px;font-size:13px;border:1px solid var(--border-strong);border-radius:8px;background:#FFF;font-family:inherit;">
+            <option value="member">團隊成員</option>
+            <option value="manager">PM 經理</option>
+          </select>
+          <button type="submit" class="btn btn-primary">+ 新增成員</button>
+        </form>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <strong style="font-size:13px;">已加入同步成員（<span id="modalMemberCount" class="mono">0</span> 人）</strong>
+          <button type="button" class="btn btn-sm" id="btnExportJsonFromTeam">下載團隊 JSON 同步包</button>
+        </div>
+        <div class="member-list" id="teamMembersList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add / Edit Project Modal -->
+  <div class="modal-backdrop" id="projectModal">
+    <div class="modal" role="dialog" aria-modal="true">
+      <div class="modal-head">
+        <h3 id="projectModalTitle">新增交辦專案</h3>
+        <button type="button" class="btn btn-sm" data-close="projectModal">關閉</button>
+      </div>
+      <form id="projectForm" class="modal-body">
+        <input type="hidden" id="fId" />
+        <div class="form-field">
+          <label for="fName">專案名稱 *</label>
+          <input type="text" id="fName" required maxlength="120" placeholder="例如：ERP 採購簽核流程自動化改版" />
+        </div>
+        <div class="form-grid">
+          <div class="form-field">
+            <label for="fReceived">接收日期 *</label>
+            <input type="date" id="fReceived" required class="mono" />
+          </div>
+          <div class="form-field">
+            <label for="fDeadline">截止日期 *</label>
+            <input type="date" id="fDeadline" required class="mono" />
+          </div>
+          <div class="form-field">
+            <label for="fRequester">專案提出人員 *</label>
+            <input type="text" id="fRequester" required maxlength="60" />
+          </div>
+          <div class="form-field">
+            <label for="fRequesterEmail">提出人員信箱（副本 CC）</label>
+            <input type="email" id="fRequesterEmail" maxlength="160" class="mono" placeholder="vp@company.com.tw" />
+          </div>
+          <div class="form-field">
+            <label for="fAssignee">負責人 *</label>
+            <input type="text" id="fAssignee" required maxlength="60" />
+          </div>
+          <div class="form-field">
+            <label for="fAssigneeEmail">負責人公司信箱（Mail2000 對象）</label>
+            <input type="email" id="fAssigneeEmail" maxlength="160" class="mono" placeholder="owner@company.com.tw" />
+          </div>
+          <div class="form-field">
+            <label for="fPriority">優先順序 *</label>
+            <select id="fPriority">
+              <option value="high">高優先</option>
+              <option value="medium" selected>中優先</option>
+              <option value="low">低優先</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label for="fStatus">狀態</label>
+            <select id="fStatus">
+              <option value="in_progress">進行中</option>
+              <option value="closed">已結案（自動移至最後面）</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label for="fPercent">目前完成度 (%)</label>
+            <input type="number" id="fPercent" min="0" max="100" value="0" class="mono" />
+          </div>
+          <div class="form-field">
+            <label for="fLastProgress">最後進度更新日</label>
+            <input type="date" id="fLastProgress" class="mono" />
+          </div>
+        </div>
+        <div class="form-field">
+          <label for="fProgress">目前進度說明</label>
+          <textarea id="fProgress" rows="2" maxlength="400"></textarea>
+        </div>
+        <div class="form-field">
+          <label for="fRemarks">備註</label>
+          <textarea id="fRemarks" rows="2" maxlength="500"></textarea>
+        </div>
+        <div class="modal-foot" style="margin:0 -20px -20px;">
+          <button type="button" class="btn" data-close="projectModal">取消</button>
+          <button type="submit" class="btn btn-primary">儲存並自動排序</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Quick Progress Modal -->
+  <div class="modal-backdrop" id="progressModal">
+    <div class="modal" role="dialog" aria-modal="true">
+      <div class="modal-head">
+        <h3 id="progressModalTitle">更新專案進度</h3>
+        <button type="button" class="btn btn-sm" data-close="progressModal">關閉</button>
+      </div>
+      <form id="progressForm" class="modal-body">
+        <input type="hidden" id="pId" />
+        <div class="form-grid">
+          <div class="form-field">
+            <label for="pPercent">完成度 (%)</label>
+            <input type="number" id="pPercent" min="0" max="100" class="mono" />
+          </div>
+          <div class="form-field">
+            <label for="pStatus">專案狀態</label>
+            <select id="pStatus">
+              <option value="in_progress">進行中</option>
+              <option value="closed">標記結案並移至最後面</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-field">
+          <label for="pText">最新進度說明 *</label>
+          <textarea id="pText" rows="3" required maxlength="400"></textarea>
+        </div>
+        <div class="form-field">
+          <label for="pRemarks">備註</label>
+          <textarea id="pRemarks" rows="2" maxlength="500"></textarea>
+        </div>
+        <div class="modal-foot" style="margin:0 -20px -20px;">
+          <button type="button" class="btn" data-close="progressModal">取消</button>
+          <button type="submit" class="btn btn-primary">儲存更新（工作天歸零）</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Mail2000 Reminder Modal -->
+  <div class="modal-backdrop" id="mailModal">
+    <div class="modal" role="dialog" aria-modal="true">
+      <div class="modal-head">
+        <h3>Mail2000 進度提醒信預覽</h3>
+        <button type="button" class="btn btn-sm" data-close="mailModal">關閉</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-grid" style="margin-bottom:10px;font-size:13px;">
+          <div><span style="color:var(--subtle);">收件人 (To)：</span><div id="mTo" class="mono" style="font-weight:600;"></div></div>
+          <div><span style="color:var(--subtle);">副本 (CC)：</span><div id="mCc" class="mono"></div></div>
+        </div>
+        <div class="form-field">
+          <label for="mSubject">信件主旨</label>
+          <input type="text" id="mSubject" />
+        </div>
+        <div class="form-field">
+          <label>信件內容</label>
+          <div id="mBody" class="email-preview"></div>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn" id="btnCopyMail">複製全文貼至 Mail2000</button>
+        <button type="button" class="btn btn-primary" id="btnOpenMailto">開啟本機郵件軟體寄送</button>
+        <button type="button" class="btn btn-primary" id="btnSendViaApi" style="display:none;">透過 Mail2000 SMTP API 寄出</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status"></div>
+
+  <script>
+    (function () {
+      const STORAGE_KEY = 'pm_tracker_standalone_v2';
+      const INITIAL_PROJECTS = [{"id":"proj-seed-001","teamId":"pm-main-team","name":"ERP 採購簽核流程自動化改版","receivedDate":"2026-11-06","requester":"林副總","requesterEmail":"vp.lin@company.com.tw","assignee":"陳柏翰","assigneeEmail":"bohan.chen@company.com.tw","deadline":"2026-11-30","priority":"high","status":"in_progress","progressPercent":65,"currentProgress":"已完成財務模組串接，待資訊部確認 Mail2000 通知白名單與 UAT 簽收","remarks":"主管每週二早會重點追蹤項目，需留意跨部門驗收時程","lastProgressAt":"2026-11-18","lastReminderSentAt":null,"lastReminderSentDate":null,"closedAt":null,"createdByUid":"RNSdCSujLQP4hFnUBFjOWn57vQx1","createdByName":"周柏翰","updatedByUid":"RNSdCSujLQP4hFnUBFjOWn57vQx1","updatedByName":"周柏翰","createdAt":"2026-11-24T13:23:07.682Z","updatedAt":"2026-11-24T13:23:07.682Z","history":[]},{"id":"proj-seed-002","teamId":"pm-main-team","name":"Q4 客戶滿意度與續約預警儀表板","receivedDate":"2026-11-12","requester":"王協理","requesterEmail":"director.wang@company.com.tw","assignee":"張雅婷","assigneeEmail":"yating.chang@company.com.tw","deadline":"2026-12-03","priority":"high","status":"in_progress","progressPercent":80,"currentProgress":"業務部資料源已匯入完成，正在微調大客戶流失風險指標門檻","remarks":"下週董事會簡報需擷取儀表板數據","lastProgressAt":"2026-11-23","lastReminderSentAt":null,"lastReminderSentDate":null,"closedAt":null,"createdByUid":"RNSdCSujLQP4hFnUBFjOWn57vQx1","createdByName":"周柏翰","updatedByUid":"RNSdCSujLQP4hFnUBFjOWn57vQx1","updatedByName":"周柏翰","createdAt":"2026-11-24T13:23:07.959Z","updatedAt":"2026-11-24T13:23:07.959Z","history":[]},{"id":"proj-seed-003","teamId":"pm-main-team","name":"供應商評鑑資料整合與季度稽核表單","receivedDate":"2026-11-06","requester":"黃經理","requesterEmail":"manager.huang@company.com.tw","assignee":"李冠宇","assigneeEmail":"guanyu.li@company.com.tw","deadline":"2026-12-10","priority":"medium","status":"in_progress","progressPercent":40,"currentProgress":"品保部尚未提供新版 KPI 權重表，等待回覆後進行表單建置","remarks":"若品保部本週仍未定案，需請 PM 經理協助升級溝通","lastProgressAt":"2026-11-19","lastReminderSentAt":null,"lastReminderSentDate":null,"closedAt":null,"createdByUid":"RNSdCSujLQP4hFnUBFjOWn57vQx1","createdByName":"周柏翰","updatedByUid":"RNSdCSujLQP4hFnUBFjOWn57vQx1","updatedByName":"周柏翰","createdAt":"2026-11-24T13:23:08.075Z","updatedAt":"2026-11-24T13:23:08.075Z","history":[]},{"id":"proj-seed-004","teamId":"pm-main-team","name":"行動端業務拜訪回報表單優化","receivedDate":"2026-11-12","requester":"吳處長","requesterEmail":"director.wu@company.com.tw","assignee":"周佩珊","assigneeEmail":"peishan.chou@company.com.tw","deadline":"2026-12-10","priority":"medium","status":"in_progress","progressPercent":55,"currentProgress":"手機版表單介面已完成，本週安排北區業務代表進行試填","remarks":"需確保 iOS / Android 手機瀏覽器離線草稿正常","lastProgressAt":"2026-11-24","lastReminderSentAt":null,"lastReminderSentDate":null,"closedAt":null,"createdByUid":"RNSdCSujLQP4hFnUBFjOWn57vQx1","createdByName":"周柏翰","updatedByUid":"RNSdCSujLQP4hFnUBFjOWn57vQx1","updatedByName":"周柏翰","createdAt":"2026-11-24T13:23:08.181Z","updatedAt":"2026-11-24T13:23:08.181Z","history":[]},{"id":"proj-seed-005","teamId":"pm-main-team","name":"內部知識庫 SOP 文件分類整併","receivedDate":"2026-11-12","requester":"人資部 劉課長","requesterEmail":"hr.liu@company.com.tw","assignee":"蔡宗翰","assigneeEmail":"zonghan.tsai@company.com.tw","deadline":"2026-12-18","priority":"low","status":"in_progress","progressPercent":30,"currentProgress":"已完成行政與客服單位 42 份文件標籤分類","remarks":"低優先順序，利用空檔持續推進","lastProgressAt":"2026-11-20","lastReminderSentAt":null,"lastReminderSentDate":null,"closedAt":null,"createdByUid":"RNSdCSujLQP4hFnUBFjOWn57vQx1","createdByName":"周柏翰","updatedByUid":"RNSdCSujLQP4hFnUBFjOWn57vQx1","updatedByName":"周柏翰","createdAt":"2026-11-24T13:23:08.261Z","updatedAt":"2026-11-24T13:23:08.261Z","history":[]},{"id":"proj-seed-006","teamId":"pm-main-team","name":"年度資安社交工程演練與宣導結案報告","receivedDate":"2026-11-03","requester":"林副總","requesterEmail":"vp.lin@company.com.tw","assignee":"張雅婷","assigneeEmail":"yating.chang@company.com.tw","deadline":"2026-11-20","priority":"high","status":"closed","progressPercent":100,"currentProgress":"全公司演練與補訓完成率 100%，結案報告已呈核備查","remarks":"已結案歸檔，自動移至清單最下方","lastProgressAt":"2026-11-20","lastReminderSentAt":null,"lastReminderSentDate":null,"closedAt":"2026-11-22T13:23:08.211Z","createdByUid":"RNSdCSujLQP4hFnUBFjOWn57vQx1","createdByName":"周柏翰","updatedByUid":"RNSdCSujLQP4hFnUBFjOWn57vQx1","updatedByName":"周柏翰","createdAt":"2026-11-24T13:23:08.326Z","updatedAt":"2026-11-24T13:23:08.326Z","history":[]}];
+      const INITIAL_SETTINGS = {"staleBusinessDaysThreshold":3,"defaultCcEmails":"","subjectPrefix":"[PM進度稽催]","customClosingNote":"請於今日下班前回覆最新執行狀態或直接至 PM 專案追蹤系統更新進度，如需跨部門資源協調請隨時聯繫 PM 經理。","mailApiEndpoint":""};
+      const INITIAL_TEAM = {"name":"PM 團隊專案同步看板","inviteCode":"PM2026","cloudAppUrl":"https://ais-dev-6s2xlkanpjxlovtxvwjfhj-70279912225.asia-east1.run.app/","members":[{"uid":"RNSdCSujLQP4hFnUBFjOWn57vQx1","displayName":"周柏翰","role":"manager","joinedAt":"2026-11-24T13:23:07.463Z"}]};
+
+      const PRIORITY_ORDER = { high: 1, medium: 2, low: 3 };
+      const PRIORITY_LABEL = { high: '高', medium: '中', low: '低' };
+
+      let state = loadState();
+      let activeTab = 'board';
+      let statusFilter = 'all';
+      let priorityFilter = 'all';
+      let searchQuery = '';
+      let currentMailProject = null;
+
+      function loadState() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed.projects)) {
+              return {
+                projects: parsed.projects,
+                settings: Object.assign({}, INITIAL_SETTINGS, parsed.settings || {}),
+                team: Object.assign({}, INITIAL_TEAM, parsed.team || {}, {
+                  members: Array.isArray(parsed.team && parsed.team.members)
+                    ? parsed.team.members
+                    : INITIAL_TEAM.members,
+                }),
+                logs: Array.isArray(parsed.logs) ? parsed.logs : [],
+              };
+            }
+          }
+        } catch (_e) {}
+        return {
+          projects: INITIAL_PROJECTS,
+          settings: INITIAL_SETTINGS,
+          team: INITIAL_TEAM,
+          logs: [],
+        };
+      }
+
+      function saveState() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        } catch (_e) {}
+      }
+
+      function escapeHtml(str) {
+        return String(str == null ? '' : str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      function formatYMD(d) {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return y + '-' + m + '-' + day;
+      }
+
+      function parseYMD(ymd) {
+        const parts = String(ymd || '').split('-').map(Number);
+        if (parts.length !== 3 || parts.some(isNaN)) return new Date();
+        return new Date(parts[0], parts[1] - 1, parts[2]);
+      }
+
+      function businessDaysSince(ymd) {
+        const start = parseYMD(ymd);
+        const now = new Date();
+        const end = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        if (end <= start) return 0;
+        let count = 0;
+        const cur = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+        while (cur < end) {
+          cur.setDate(cur.getDate() + 1);
+          const day = cur.getDay();
+          if (day !== 0 && day !== 6) count++;
+        }
+        return count;
+      }
+
+      function daysUntil(deadlineYmd) {
+        const t = parseYMD(deadlineYmd);
+        const now = new Date();
+        const base = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        return Math.round((t.getTime() - base.getTime()) / 86400000);
+      }
+
+      function isStale(p) {
+        if (p.status === 'closed') return false;
+        return businessDaysSince(p.lastProgressAt) >= (state.settings.staleBusinessDaysThreshold || 3);
+      }
+
+      function sortProjects(list) {
+        return list.slice().sort(function (a, b) {
+          if (a.status === 'closed' && b.status !== 'closed') return 1;
+          if (a.status !== 'closed' && b.status === 'closed') return -1;
+          if (a.status === 'closed' && b.status === 'closed') {
+            return new Date(b.closedAt || 0).getTime() - new Date(a.closedAt || 0).getTime();
+          }
+          const prio = (PRIORITY_ORDER[a.priority] || 9) - (PRIORITY_ORDER[b.priority] || 9);
+          if (prio !== 0) return prio;
+          const staleDiff = (isStale(a) ? 0 : 1) - (isStale(b) ? 0 : 1);
+          if (staleDiff !== 0) return staleDiff;
+          return String(a.deadline || '').localeCompare(String(b.deadline || ''));
+        });
+      }
+
+      function showToast(msg) {
+        const el = document.getElementById('toast');
+        el.textContent = msg;
+        el.classList.add('show');
+        clearTimeout(showToast._t);
+        showToast._t = setTimeout(function () { el.classList.remove('show'); }, 3500);
+      }
+
+      function buildEmailPayload(p) {
+        const idle = businessDaysSince(p.lastProgressAt);
+        const left = daysUntil(p.deadline);
+        const dlNote = left < 0 ? '已逾期 ' + Math.abs(left) + ' 天' : left === 0 ? '今日截止' : '尚餘 ' + left + ' 天';
+        const prefix = state.settings.subjectPrefix || '[PM進度稽催]';
+        const subject = prefix + ' 「' + p.name + '」已連續 ' + idle + ' 個工作天無進度更新（優先順序：' + PRIORITY_LABEL[p.priority] + '）';
+        const to = p.assigneeEmail ? [p.assigneeEmail.trim()] : [];
+        const ccSet = {};
+        if (p.requesterEmail && p.requesterEmail.trim() !== p.assigneeEmail) {
+          ccSet[p.requesterEmail.trim()] = true;
+        }
+        String(state.settings.defaultCcEmails || '').split(/[,;]+/).forEach(function (em) {
+          const clean = em.trim();
+          if (clean && to.indexOf(clean) === -1) ccSet[clean] = true;
+        });
+        const cc = Object.keys(ccSet);
+        const body = [
+          p.assignee + ' 您好：',
+          '',
+          '以下主管交辦專案已連續 ' + idle + ' 個工作天（最後更新日：' + p.lastProgressAt + '）無進度更新，特此提醒：',
+          '',
+          '■ 專案名稱：' + p.name,
+          '■ 優先順序：' + PRIORITY_LABEL[p.priority],
+          '■ 接收日期：' + p.receivedDate,
+          '■ 專案提出人員：' + p.requester,
+          '■ 負責人：' + p.assignee,
+          '■ 截止日期：' + p.deadline + '（' + dlNote + '）',
+          '■ 目前進度：' + p.progressPercent + '% - ' + (p.currentProgress || '尚無說明'),
+          '■ 備註：' + (p.remarks || '無'),
+          '',
+          state.settings.customClosingNote || '請於今日下班前回報最新進度。',
+          '',
+          '— PM 專案管理系統（Mail2000 企業信箱通知）'
+        ].join('\n');
+        return { to: to, cc: cc, subject: subject, body: body, idle: idle };
+      }
+
+      function getCloudInviteUrl() {
+        const base = state.team.cloudAppUrl || (window.location.protocol.indexOf('http') === 0 ? (window.location.origin + window.location.pathname) : '');
+        if (!base) return '加入碼：' + (state.team.inviteCode || 'PM2026');
+        return base + '?join=' + encodeURIComponent(state.team.inviteCode || 'PM2026');
+      }
+
+      function render() {
+        const threshold = state.settings.staleBusinessDaysThreshold || 3;
+        const sorted = sortProjects(state.projects);
+        const active = sorted.filter(function (p) { return p.status !== 'closed'; });
+        const high = active.filter(function (p) { return p.priority === 'high'; });
+        const stale = sorted.filter(isStale);
+        const closed = sorted.filter(function (p) { return p.status === 'closed'; });
+
+        document.getElementById('teamKicker').textContent = (state.team.name || 'PM 團隊專案同步看板') + ' · 加入碼 ' + (state.team.inviteCode || 'PM2026');
+        document.getElementById('teamCountBadge').textContent = (state.team.members || []).length;
+        document.getElementById('kpiActive').textContent = active.length;
+        document.getElementById('kpiHigh').textContent = high.length;
+        document.getElementById('kpiStale').textContent = stale.length;
+        document.getElementById('kpiStale').style.color = stale.length > 0 ? 'var(--danger)' : 'var(--success)';
+        document.getElementById('kpiStaleLabel').textContent = '≥ ' + threshold + ' 工作天無進度';
+        document.getElementById('kpiClosed').textContent = closed.length;
+        document.getElementById('navStaleCount').textContent = stale.length > 0 ? '(' + stale.length + ')' : '';
+        document.getElementById('mobStaleCount').textContent = stale.length > 0 ? '(' + stale.length + ')' : '';
+
+        const batchBtn = document.getElementById('btnBatchRemind');
+        if (stale.length > 0 && activeTab === 'board') {
+          batchBtn.style.display = 'inline-flex';
+          batchBtn.textContent = '發送 ' + stale.length + ' 筆提醒信';
+        } else {
+          batchBtn.style.display = 'none';
+        }
+
+        const q = searchQuery.trim().toLowerCase();
+        const filtered = sorted.filter(function (p) {
+          if (statusFilter === 'in_progress' && p.status !== 'in_progress') return false;
+          if (statusFilter === 'closed' && p.status !== 'closed') return false;
+          if (statusFilter === 'stale' && !isStale(p)) return false;
+          if (priorityFilter !== 'all' && p.priority !== priorityFilter) return false;
+          if (q) {
+            const hay = (p.name + ' ' + p.requester + ' ' + p.assignee + ' ' + p.currentProgress + ' ' + p.remarks).toLowerCase();
+            if (hay.indexOf(q) === -1) return false;
+          }
+          return true;
+        });
+
+        renderDesktopTable(filtered);
+        renderMobileCards(filtered);
+        renderRemindersView(stale);
+        renderSettingsForm();
+        renderTeamModalContent();
+      }
+
+      function renderTeamModalContent() {
+        const members = state.team.members || [];
+        const inviteUrl = getCloudInviteUrl();
+        document.getElementById('teamCodeDisplay').textContent = state.team.inviteCode || 'PM2026';
+        document.getElementById('teamInviteUrlInput').value = inviteUrl;
+        document.getElementById('tmName').value = state.team.name || 'PM 團隊專案同步看板';
+        document.getElementById('tmCode').value = state.team.inviteCode || 'PM2026';
+        document.getElementById('modalMemberCount').textContent = members.length;
+
+        const openCloudBtn = document.getElementById('btnOpenCloudApp');
+        if (state.team.cloudAppUrl && state.team.cloudAppUrl.indexOf('http') === 0) {
+          openCloudBtn.href = inviteUrl;
+          openCloudBtn.style.display = 'inline-flex';
+        } else {
+          openCloudBtn.style.display = 'none';
+        }
+
+        const listBox = document.getElementById('teamMembersList');
+        if (members.length === 0) {
+          listBox.innerHTML = '<div class="empty-box" style="padding:24px;">尚未加入任何成員。</div>';
+          return;
+        }
+        listBox.innerHTML = members.map(function (m) {
+          const isMgr = m.role === 'manager';
+          return '<div class="member-item">' +
+            '<div>' +
+              '<div style="font-weight:600;color:var(--text);">' + escapeHtml(m.displayName) + '</div>' +
+              '<div class="subtext">' + (isMgr ? 'PM 經理（完整管理權限）' : '團隊成員（檢視、新增與進度更新）') + '</div>' +
+            '</div>' +
+            '<div style="display:flex;gap:6px;">' +
+              '<button type="button" class="btn btn-sm" data-mact="toggleRole" data-uid="' + escapeHtml(m.uid) + '">' + (isMgr ? '轉為成員' : '設為經理') + '</button>' +
+              '<button type="button" class="btn btn-sm" data-mact="removeMember" data-uid="' + escapeHtml(m.uid) + '">移除</button>' +
+            '</div>' +
+          '</div>';
+        }).join('');
+      }
+
+      function renderDesktopTable(list) {
+        const tbody = document.getElementById('desktopTbody');
+        if (list.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="9" class="empty-box">目前沒有符合篩選條件的專案。</td></tr>';
+          return;
+        }
+        const firstClosed = list.findIndex(function (p) { return p.status === 'closed'; });
+        const rows = [];
+        list.forEach(function (p, idx) {
+          if (firstClosed > 0 && idx === firstClosed) {
+            rows.push('<tr class="divider-row"><td colspan="9">已結案專案（依規則自動移至清單最後面）</td></tr>');
+          }
+          const closed = p.status === 'closed';
+          const idle = closed ? 0 : businessDaysSince(p.lastProgressAt);
+          const stale = !closed && isStale(p);
+          const left = daysUntil(p.deadline);
+          const prioCls = closed ? '' : 'prio-' + p.priority;
+          const rowCls = closed ? 'row-closed' : stale ? 'row-stale' : '';
+          const dlText = closed ? '' : left < 0 ? '逾期 ' + Math.abs(left) + ' 天' : left === 0 ? '今日截止' : '剩 ' + left + ' 天';
+
+          rows.push(
+            '<tr class="' + rowCls + '">' +
+              '<td><span class="' + prioCls + '">' + escapeHtml(PRIORITY_LABEL[p.priority]) + '</span><div class="subtext">' + (closed ? '已結案' : '進行中') + '</div></td>' +
+              '<td><div class="' + (closed ? 'text-closed' : '') + '" style="font-weight:600;">' + escapeHtml(p.name) + '</div>' +
+                (stale ? '<div class="stale-note">停滯 ' + idle + ' 個工作天無進度</div>' : '') + '</td>' +
+              '<td class="mono" style="font-size:12px;white-space:nowrap;">' + escapeHtml(p.receivedDate) + '</td>' +
+              '<td>' + escapeHtml(p.requester) + (p.requesterEmail ? '<div class="subtext mono">' + escapeHtml(p.requesterEmail) + '</div>' : '') + '</td>' +
+              '<td style="font-weight:500;">' + escapeHtml(p.assignee) + (p.assigneeEmail ? '<div class="subtext mono">' + escapeHtml(p.assigneeEmail) + '</div>' : '') + '</td>' +
+              '<td style="white-space:nowrap;"><div class="mono" style="font-size:12px;' + (!closed && left < 0 ? 'color:var(--danger);font-weight:700;' : '') + '">' + escapeHtml(p.deadline) + '</div>' +
+                (dlText ? '<div class="subtext">' + escapeHtml(dlText) + '</div>' : '') + '</td>' +
+              '<td><div class="prog-row"><div class="prog-track"><div class="prog-fill ' + (closed ? 'closed' : stale ? 'stale' : '') + '" style="width:' + p.progressPercent + '%"></div></div><span class="mono" style="font-size:12px;font-weight:600;">' + p.progressPercent + '%</span><span class="subtext mono" style="margin:0;">· ' + escapeHtml(p.lastProgressAt) + '</span></div><div style="font-size:12px;color:var(--muted);line-height:1.5;">' + escapeHtml(p.currentProgress || '尚未填寫進度') + '</div></td>' +
+              '<td style="font-size:12px;color:var(--muted);max-width:200px;">' + escapeHtml(p.remarks || '—') + '</td>' +
+              '<td style="text-align:right;"><div class="row-actions">' +
+                (!closed ? '<button type="button" class="btn btn-sm" data-act="progress" data-id="' + escapeHtml(p.id) + '">更新進度</button>' : '') +
+                (!closed ? '<button type="button" class="btn btn-sm ' + (stale ? 'btn-danger-outline' : '') + '" data-act="mail" data-id="' + escapeHtml(p.id) + '">發信</button>' : '') +
+                '<button type="button" class="btn btn-sm" data-act="toggleClose" data-id="' + escapeHtml(p.id) + '">' + (closed ? '重開' : '結案') + '</button>' +
+                '<button type="button" class="btn btn-sm" data-act="edit" data-id="' + escapeHtml(p.id) + '">編輯</button>' +
+                '<button type="button" class="btn btn-sm" data-act="delete" data-id="' + escapeHtml(p.id) + '">刪除</button>' +
+              '</div></td>' +
+            '</tr>'
+          );
+        });
+        tbody.innerHTML = rows.join('');
+      }
+
+      function renderMobileCards(list) {
+        const container = document.getElementById('mobileCards');
+        if (list.length === 0) {
+          container.innerHTML = '<div class="panel empty-box">目前沒有符合篩選條件的專案。</div>';
+          return;
+        }
+        const firstClosed = list.findIndex(function (p) { return p.status === 'closed'; });
+        const html = [];
+        list.forEach(function (p, idx) {
+          if (firstClosed > 0 && idx === firstClosed) {
+            html.push('<div style="font-size:12px;font-weight:600;color:var(--subtle);padding:8px 2px 0;">以下為已結案專案（自動置底）</div>');
+          }
+          const closed = p.status === 'closed';
+          const idle = closed ? 0 : businessDaysSince(p.lastProgressAt);
+          const stale = !closed && isStale(p);
+          html.push(
+            '<article class="m-card ' + (closed ? 'closed' : stale ? 'stale' : '') + '">' +
+              '<div class="m-top"><span class="' + (closed ? '' : 'prio-' + p.priority) + '">優先順序：' + escapeHtml(PRIORITY_LABEL[p.priority]) + '</span><span>' + (closed ? '已結案' : stale ? '停滯 ' + idle + ' 工作天' : '進行中') + '</span></div>' +
+              '<h3 class="m-title ' + (closed ? 'text-closed' : '') + '">' + escapeHtml(p.name) + '</h3>' +
+              (stale ? '<div class="stale-note" style="margin-bottom:8px;">已連續 ' + idle + ' 個工作天無進度更新（上次：' + escapeHtml(p.lastProgressAt) + '）</div>' : '') +
+              '<div class="prog-row"><div class="prog-track" style="flex:1;"><div class="prog-fill ' + (closed ? 'closed' : stale ? 'stale' : '') + '" style="width:' + p.progressPercent + '%"></div></div><span class="mono" style="font-size:12px;font-weight:700;">' + p.progressPercent + '%</span></div>' +
+              '<div style="font-size:13px;color:var(--muted);line-height:1.5;">' + escapeHtml(p.currentProgress || '尚未填寫進度') + '</div>' +
+              '<div class="m-meta">' +
+                '<div><label>專案提出人員</label>' + escapeHtml(p.requester) + '</div>' +
+                '<div><label>負責人</label><strong>' + escapeHtml(p.assignee) + '</strong></div>' +
+                '<div><label>接收日期</label><span class="mono">' + escapeHtml(p.receivedDate) + '</span></div>' +
+                '<div><label>截止日期</label><span class="mono">' + escapeHtml(p.deadline) + '</span></div>' +
+              '</div>' +
+              (p.remarks ? '<div style="font-size:12px;color:var(--muted);">備註：' + escapeHtml(p.remarks) + '</div>' : '') +
+              '<div class="m-actions">' +
+                (!closed ? '<button type="button" class="btn btn-primary" data-act="progress" data-id="' + escapeHtml(p.id) + '">更新進度</button>' : '') +
+                (!closed ? '<button type="button" class="btn ' + (stale ? 'btn-danger' : '') + '" data-act="mail" data-id="' + escapeHtml(p.id) + '">發信提醒</button>' : '') +
+                '<button type="button" class="btn" data-act="toggleClose" data-id="' + escapeHtml(p.id) + '">' + (closed ? '重新開啟' : '結案置底') + '</button>' +
+                '<button type="button" class="btn" data-act="edit" data-id="' + escapeHtml(p.id) + '">編輯內容</button>' +
+              '</div>' +
+            '</article>'
+          );
+        });
+        container.innerHTML = html.join('');
+      }
+
+      function renderRemindersView(stale) {
+        const box = document.getElementById('staleListContainer');
+        if (stale.length === 0) {
+          box.innerHTML = '<div class="empty-box">目前所有進行中專案皆於三個工作天內有進度更新，無須催辦。</div>';
+        } else {
+          box.innerHTML = stale.map(function (p) {
+            const idle = businessDaysSince(p.lastProgressAt);
+            return '<div class="stale-item">' +
+              '<div>' +
+                '<div style="font-size:12px;margin-bottom:4px;"><span class="prio-' + p.priority + '">' + escapeHtml(PRIORITY_LABEL[p.priority]) + '優先</span> · <strong style="color:var(--danger);">停滯 ' + idle + ' 個工作天</strong> · <span class="mono">最後更新 ' + escapeHtml(p.lastProgressAt) + '</span></div>' +
+                '<div style="font-size:15px;font-weight:700;">' + escapeHtml(p.name) + '</div>' +
+                '<div class="subtext">負責人：' + escapeHtml(p.assignee) + ' (' + escapeHtml(p.assigneeEmail || '未填寫信箱') + ') · 提出人員：' + escapeHtml(p.requester) + '</div>' +
+              '</div>' +
+              '<button type="button" class="btn btn-primary" data-act="mail" data-id="' + escapeHtml(p.id) + '">預覽並發送 Mail2000 提醒</button>' +
+            '</div>';
+          }).join('');
+        }
+
+        const logBox = document.getElementById('logsContainer');
+        if (state.logs.length === 0) {
+          logBox.innerHTML = '<div class="empty-box">尚無發信通知紀錄。</div>';
+        } else {
+          logBox.innerHTML = '<table><thead><tr><th>發送時間</th><th>專案名稱</th><th>收件人</th><th>停滯工作天</th><th>方式</th></tr></thead><tbody>' +
+            state.logs.map(function (l) {
+              return '<tr><td class="mono" style="font-size:12px;white-space:nowrap;">' + escapeHtml(l.sentAt) + '</td><td>' + escapeHtml(l.projectName) + '</td><td class="mono" style="font-size:12px;">' + escapeHtml(l.recipients) + '</td><td class="mono">' + l.idleDays + ' 天</td><td>' + escapeHtml(l.mode) + '</td></tr>';
+            }).join('') +
+            '</tbody></table>';
+        }
+      }
+
+      function renderSettingsForm() {
+        document.getElementById('setThreshold').value = state.settings.staleBusinessDaysThreshold || 3;
+        document.getElementById('setPrefix').value = state.settings.subjectPrefix || '[PM進度稽催]';
+        document.getElementById('setCc').value = state.settings.defaultCcEmails || '';
+        document.getElementById('setClosing').value = state.settings.customClosingNote || '';
+        document.getElementById('setApiUrl').value = state.settings.mailApiEndpoint || '';
+      }
+
+      function openModal(id) { document.getElementById(id).classList.add('open'); }
+      function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+      function switchTab(tab) {
+        activeTab = tab;
+        document.querySelectorAll('[data-tab]').forEach(function (btn) {
+          btn.classList.toggle('active', btn.getAttribute('data-tab') === tab);
+        });
+        document.getElementById('view-board').style.display = tab === 'board' ? 'block' : 'none';
+        document.getElementById('view-reminders').style.display = tab === 'reminders' ? 'block' : 'none';
+        document.getElementById('view-settings').style.display = tab === 'settings' ? 'block' : 'none';
+        document.getElementById('pageTitle').textContent =
+          tab === 'board' ? '主管交辦專案總覽' : tab === 'reminders' ? '郵件提醒中心（三個工作天無進度）' : 'Mail2000 與備份設定';
+        render();
+      }
+
+      function openProjectForm(proj) {
+        const today = formatYMD(new Date());
+        document.getElementById('projectModalTitle').textContent = proj ? '編輯專案內容' : '新增交辦專案';
+        document.getElementById('fId').value = proj ? proj.id : '';
+        document.getElementById('fName').value = proj ? proj.name : '';
+        document.getElementById('fReceived').value = proj ? proj.receivedDate : today;
+        document.getElementById('fDeadline').value = proj ? proj.deadline : formatYMD(new Date(Date.now() + 10 * 86400000));
+        document.getElementById('fRequester').value = proj ? proj.requester : '';
+        document.getElementById('fRequesterEmail').value = proj ? (proj.requesterEmail || '') : '';
+        document.getElementById('fAssignee').value = proj ? proj.assignee : '';
+        document.getElementById('fAssigneeEmail').value = proj ? (proj.assigneeEmail || '') : '';
+        document.getElementById('fPriority').value = proj ? proj.priority : 'medium';
+        document.getElementById('fStatus').value = proj ? proj.status : 'in_progress';
+        document.getElementById('fPercent').value = proj ? proj.progressPercent : 0;
+        document.getElementById('fLastProgress').value = proj ? proj.lastProgressAt : today;
+        document.getElementById('fProgress').value = proj ? (proj.currentProgress || '') : '已接收交辦事項，進入需求確認階段';
+        document.getElementById('fRemarks').value = proj ? (proj.remarks || '') : '';
+        openModal('projectModal');
+      }
+
+      function openProgressForm(proj) {
+        document.getElementById('progressModalTitle').textContent = '更新進度：' + proj.name;
+        document.getElementById('pId').value = proj.id;
+        document.getElementById('pPercent').value = proj.progressPercent;
+        document.getElementById('pStatus').value = proj.status;
+        document.getElementById('pText').value = proj.currentProgress || '';
+        document.getElementById('pRemarks').value = proj.remarks || '';
+        openModal('progressModal');
+      }
+
+      function openMailModal(proj) {
+        currentMailProject = proj;
+        const payload = buildEmailPayload(proj);
+        document.getElementById('mTo').textContent = payload.to.join(', ') || '未填寫負責人信箱';
+        document.getElementById('mCc').textContent = payload.cc.join(', ') || '無';
+        document.getElementById('mSubject').value = payload.subject;
+        document.getElementById('mBody').textContent = payload.body;
+        document.getElementById('btnSendViaApi').style.display = state.settings.mailApiEndpoint ? 'inline-flex' : 'none';
+        openModal('mailModal');
+      }
+
+      function recordLog(proj, modeLabel) {
+        const payload = buildEmailPayload(proj);
+        state.logs.unshift({
+          sentAt: new Date().toLocaleString('zh-TW', { hour12: false }),
+          projectName: proj.name,
+          recipients: payload.to.join(', ') || '未填寫信箱',
+          idleDays: payload.idle,
+          mode: modeLabel,
+        });
+        state.logs = state.logs.slice(0, 100);
+        saveState();
+        render();
+      }
+
+      function exportJsonSyncPack() {
+        const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json;charset=utf-8' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'PM團隊同步包_' + formatYMD(new Date()) + '.json';
+        a.click();
+        showToast('已下載團隊 JSON 同步包（含專案與成員清單）');
+      }
+
+      // Event Bindings
+      document.querySelectorAll('[data-tab]').forEach(function (btn) {
+        btn.addEventListener('click', function () { switchTab(btn.getAttribute('data-tab')); });
+      });
+      document.querySelectorAll('[data-close]').forEach(function (btn) {
+        btn.addEventListener('click', function () { closeModal(btn.getAttribute('data-close')); });
+      });
+      document.getElementById('btnAddProject').addEventListener('click', function () { openProjectForm(null); });
+      document.getElementById('btnBatchRemind').addEventListener('click', function () { switchTab('reminders'); });
+      document.getElementById('btnTeamSync').addEventListener('click', function () {
+        renderTeamModalContent();
+        openModal('teamModal');
+      });
+
+      function copyText(text, successMsg) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(function () {
+            showToast(successMsg);
+          }).catch(function () {
+            fallbackCopy(text, successMsg);
+          });
+        } else {
+          fallbackCopy(text, successMsg);
+        }
+      }
+
+      function fallbackCopy(text, successMsg) {
+        try {
+          const ta = document.createElement('textarea');
+          ta.value = text;
+          ta.style.position = 'fixed';
+          ta.style.opacity = '0';
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+          showToast(successMsg);
+        } catch (_e) {
+          showToast('複製失敗，請手動選取複製');
+        }
+      }
+
+      document.getElementById('btnCopyInviteUrl').addEventListener('click', function () {
+        copyText(getCloudInviteUrl(), '已複製雲端團隊邀請連結');
+      });
+      document.getElementById('btnCopyInviteCode').addEventListener('click', function () {
+        const code = state.team.inviteCode || 'PM2026';
+        copyText(code, '已複製團隊加入碼：' + code);
+      });
+      document.getElementById('btnExportJsonFromTeam').addEventListener('click', exportJsonSyncPack);
+
+      document.getElementById('teamMetaForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const name = document.getElementById('tmName').value.trim();
+        const code = document.getElementById('tmCode').value.trim().toUpperCase().replace(/[^A-Z0-9-]/g, '');
+        if (code.length < 4) {
+          showToast('加入碼至少需 4 碼大寫英數');
+          return;
+        }
+        state.team.name = name || 'PM 團隊專案同步看板';
+        state.team.inviteCode = code;
+        saveState();
+        render();
+        showToast('團隊名稱與加入碼已更新');
+      });
+
+      document.getElementById('addMemberForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const nameInput = document.getElementById('newMemberName');
+        const name = nameInput.value.trim();
+        if (!name) return;
+        const role = document.getElementById('newMemberRole').value === 'manager' ? 'manager' : 'member';
+        state.team.members = state.team.members || [];
+        state.team.members.push({
+          uid: 'mem-' + Date.now().toString(36),
+          displayName: name,
+          role: role,
+          joinedAt: new Date().toISOString(),
+        });
+        nameInput.value = '';
+        saveState();
+        render();
+        showToast('已新增團隊成員：' + name);
+      });
+
+      document.getElementById('teamMembersList').addEventListener('click', function (e) {
+        const btn = e.target.closest('button[data-mact]');
+        if (!btn) return;
+        const act = btn.getAttribute('data-mact');
+        const uid = btn.getAttribute('data-uid');
+        if (act === 'toggleRole') {
+          state.team.members = (state.team.members || []).map(function (m) {
+            if (m.uid === uid) {
+              return Object.assign({}, m, { role: m.role === 'manager' ? 'member' : 'manager' });
+            }
+            return m;
+          });
+          saveState();
+          render();
+          showToast('已更新成員權限');
+        } else if (act === 'removeMember') {
+          state.team.members = (state.team.members || []).filter(function (m) { return m.uid !== uid; });
+          saveState();
+          render();
+          showToast('已移除團隊成員');
+        }
+      });
+
+      document.getElementById('searchInput').addEventListener('input', function (e) {
+        searchQuery = e.target.value;
+        render();
+      });
+      document.getElementById('statusFilters').addEventListener('click', function (e) {
+        const btn = e.target.closest('button[data-status]');
+        if (!btn) return;
+        statusFilter = btn.getAttribute('data-status');
+        document.querySelectorAll('#statusFilters button').forEach(function (b) { b.classList.toggle('active', b === btn); });
+        render();
+      });
+      document.getElementById('priorityFilters').addEventListener('click', function (e) {
+        const btn = e.target.closest('button[data-priority]');
+        if (!btn) return;
+        priorityFilter = btn.getAttribute('data-priority');
+        document.querySelectorAll('#priorityFilters button').forEach(function (b) { b.classList.toggle('active', b === btn); });
+        render();
+      });
+
+      document.addEventListener('click', function (e) {
+        const btn = e.target.closest('button[data-act]');
+        if (!btn) return;
+        const act = btn.getAttribute('data-act');
+        const id = btn.getAttribute('data-id');
+        const proj = state.projects.find(function (p) { return p.id === id; });
+        if (!proj) return;
+
+        if (act === 'edit') openProjectForm(proj);
+        if (act === 'progress') openProgressForm(proj);
+        if (act === 'mail') openMailModal(proj);
+        if (act === 'toggleClose') {
+          if (proj.status === 'closed') {
+            proj.status = 'in_progress';
+            proj.closedAt = null;
+            proj.progressPercent = Math.min(95, proj.progressPercent || 50);
+            showToast('已重新開啟專案並依優先順序排序');
+          } else {
+            proj.status = 'closed';
+            proj.progressPercent = 100;
+            proj.closedAt = new Date().toISOString();
+            showToast('專案已結案並自動移至最下方');
+          }
+          proj.lastProgressAt = formatYMD(new Date());
+          saveState();
+          render();
+        }
+        if (act === 'delete') {
+          state.projects = state.projects.filter(function (p) { return p.id !== id; });
+          saveState();
+          render();
+          showToast('已刪除專案「' + proj.name + '」');
+        }
+      });
+
+      document.getElementById('projectForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const id = document.getElementById('fId').value;
+        const status = document.getElementById('fStatus').value;
+        const payload = {
+          id: id || ('proj-' + Date.now().toString(36)),
+          name: document.getElementById('fName').value.trim(),
+          receivedDate: document.getElementById('fReceived').value,
+          deadline: document.getElementById('fDeadline').value,
+          requester: document.getElementById('fRequester').value.trim(),
+          requesterEmail: document.getElementById('fRequesterEmail').value.trim(),
+          assignee: document.getElementById('fAssignee').value.trim(),
+          assigneeEmail: document.getElementById('fAssigneeEmail').value.trim(),
+          priority: document.getElementById('fPriority').value,
+          status: status,
+          progressPercent: status === 'closed' ? 100 : Math.max(0, Math.min(100, Number(document.getElementById('fPercent').value) || 0)),
+          lastProgressAt: document.getElementById('fLastProgress').value || formatYMD(new Date()),
+          currentProgress: document.getElementById('fProgress').value.trim(),
+          remarks: document.getElementById('fRemarks').value.trim(),
+          closedAt: status === 'closed' ? new Date().toISOString() : null,
+        };
+        if (id) {
+          const idx = state.projects.findIndex(function (p) { return p.id === id; });
+          if (idx >= 0) state.projects[idx] = Object.assign({}, state.projects[idx], payload);
+          showToast('專案內容已更新');
+        } else {
+          state.projects.push(payload);
+          showToast('新專案已自動納入追蹤清單');
+        }
+        saveState();
+        closeModal('projectModal');
+        render();
+      });
+
+      document.getElementById('progressForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const id = document.getElementById('pId').value;
+        const proj = state.projects.find(function (p) { return p.id === id; });
+        if (!proj) return;
+        const status = document.getElementById('pStatus').value;
+        proj.status = status;
+        proj.progressPercent = status === 'closed' ? 100 : Math.max(0, Math.min(100, Number(document.getElementById('pPercent').value) || 0));
+        proj.currentProgress = document.getElementById('pText').value.trim();
+        proj.remarks = document.getElementById('pRemarks').value.trim();
+        proj.lastProgressAt = formatYMD(new Date());
+        proj.closedAt = status === 'closed' ? (proj.closedAt || new Date().toISOString()) : null;
+        saveState();
+        closeModal('progressModal');
+        render();
+        showToast(status === 'closed' ? '專案已結案並移至最下方' : '進度已更新，工作天計數已歸零');
+      });
+
+      document.getElementById('btnCopyMail').addEventListener('click', function () {
+        if (!currentMailProject) return;
+        const payload = buildEmailPayload(currentMailProject);
+        const subj = document.getElementById('mSubject').value;
+        const text = '收件人: ' + payload.to.join(', ') + '\n副本: ' + (payload.cc.join(', ') || '無') + '\n主旨: ' + subj + '\n\n' + payload.body;
+        copyText(text, '已複製提醒信全文，可直接貼上公司 Mail2000 寄出');
+        recordLog(currentMailProject, '複製貼至 Mail2000');
+      });
+
+      document.getElementById('btnOpenMailto').addEventListener('click', function () {
+        if (!currentMailProject) return;
+        const payload = buildEmailPayload(currentMailProject);
+        const subj = document.getElementById('mSubject').value;
+        const params = new URLSearchParams();
+        if (payload.cc.length > 0) params.set('cc', payload.cc.join(','));
+        params.set('subject', subj);
+        params.set('body', payload.body);
+        const link = document.createElement('a');
+        link.href = 'mailto:' + encodeURIComponent(payload.to.join(',')) + '?' + params.toString().replace(/\+/g, '%20');
+        link.click();
+        recordLog(currentMailProject, '本機郵件軟體 (mailto)');
+        closeModal('mailModal');
+        showToast('已呼叫預設郵件軟體並寫入提醒紀錄');
+      });
+
+      document.getElementById('btnSendViaApi').addEventListener('click', function () {
+        if (!currentMailProject || !state.settings.mailApiEndpoint) return;
+        fetch(state.settings.mailApiEndpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            projects: [currentMailProject],
+            settings: state.settings,
+            subject: document.getElementById('mSubject').value,
+          }),
+        })
+          .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+          .then(function (res) {
+            if (!res.ok) throw new Error(res.d.error || 'Mail2000 API 寄送失敗');
+            recordLog(currentMailProject, 'Mail2000 SMTP API');
+            closeModal('mailModal');
+            showToast('已透過公司 Mail2000 SMTP API 成功寄出提醒信');
+          })
+          .catch(function (err) {
+            showToast('寄送失敗：' + err.message);
+          });
+      });
+
+      document.getElementById('settingsForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        state.settings.staleBusinessDaysThreshold = Math.max(1, Math.min(30, Number(document.getElementById('setThreshold').value) || 3));
+        state.settings.subjectPrefix = document.getElementById('setPrefix').value.trim() || '[PM進度稽催]';
+        state.settings.defaultCcEmails = document.getElementById('setCc').value.trim();
+        state.settings.customClosingNote = document.getElementById('setClosing').value.trim();
+        state.settings.mailApiEndpoint = document.getElementById('setApiUrl').value.trim();
+        saveState();
+        render();
+        showToast('Mail2000 提醒規則與範本已儲存');
+      });
+
+      document.getElementById('btnExportCsv').addEventListener('click', function () {
+        const sorted = sortProjects(state.projects);
+        const headers = ['狀態', '優先順序', '專案名稱', '接收日期', '專案提出人員', '負責人', '截止日期', '完成度(%)', '目前進度', '最後更新日', '停滯工作天', '備註'];
+        const esc = function (v) {
+          const s = String(v == null ? '' : v);
+          return /["\n\r,]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+        };
+        const rows = [headers.map(esc).join(',')].concat(sorted.map(function (p) {
+          return [
+            p.status === 'closed' ? '已結案' : '進行中',
+            PRIORITY_LABEL[p.priority],
+            p.name,
+            p.receivedDate,
+            p.requester,
+            p.assignee,
+            p.deadline,
+            p.progressPercent,
+            p.currentProgress,
+            p.lastProgressAt,
+            p.status === 'closed' ? 0 : businessDaysSince(p.lastProgressAt),
+            p.remarks
+          ].map(esc).join(',');
+        }));
+        const blob = new Blob(['\uFEFF' + rows.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'PM專案管理表_' + formatYMD(new Date()) + '.csv';
+        a.click();
+        showToast('已匯出 CSV 檔案');
+      });
+
+      document.getElementById('btnExportJson').addEventListener('click', exportJsonSyncPack);
+
+      document.getElementById('importJsonInput').addEventListener('change', function (e) {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function () {
+          try {
+            const parsed = JSON.parse(String(reader.result));
+            if (!Array.isArray(parsed.projects)) throw new Error('檔案格式不符');
+            state.projects = parsed.projects;
+            if (parsed.settings) state.settings = Object.assign({}, state.settings, parsed.settings);
+            if (parsed.team) state.team = Object.assign({}, state.team, parsed.team);
+            if (Array.isArray(parsed.logs)) state.logs = parsed.logs;
+            saveState();
+            render();
+            showToast('已成功還原 ' + state.projects.length + ' 筆專案與團隊成員資料');
+          } catch (_err) {
+            showToast('匯入失敗：請選擇有效的 JSON 同步包');
+          }
+        };
+        reader.readAsText(file);
+        e.target.value = '';
+      });
+
+      render();
+    })();
+  </script>
+</body>
+</html>
