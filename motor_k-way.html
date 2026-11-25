@@ -1,0 +1,1584 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>馬達鍵槽後加工排程系統</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --surface-muted: #f1f5f9;
+      --border: #e2e8f0;
+      --border-strong: #cbd5e1;
+      --ink: #0f172a;
+      --ink-muted: #475569;
+      --ink-subtle: #64748b;
+      --accent: #1d4ed8;
+      --accent-hover: #1e40af;
+      --green: #15803d;
+      --amber: #b45309;
+      --red: #b91c1c;
+      --font-sans: "Plus Jakarta Sans", "Noto Sans TC", "Microsoft JhengHei", -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: "IBM Plex Mono", "SFMono-Regular", Consolas, Menlo, monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--font-sans);
+      -webkit-font-smoothing: antialiased;
+    }
+    .mono {
+      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Layout Shell */
+    .app-shell {
+      display: flex;
+      min-height: 100vh;
+    }
+    .sidebar {
+      width: 264px;
+      flex-shrink: 0;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+    }
+    .sidebar-brand {
+      height: 56px;
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      flex-shrink: 0;
+    }
+    .nav-list {
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .nav-btn {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 10px 12px;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--ink-muted);
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      text-align: left;
+      transition: background 150ms, color 150ms;
+    }
+    .nav-btn:hover { background: var(--surface-muted); color: var(--ink); }
+    .nav-btn.active { background: var(--ink); color: #fff; }
+    .nav-count { font-size: 12px; opacity: 0.72; }
+
+    .sidebar-section {
+      margin: 4px 12px 0;
+      padding: 16px 8px;
+      border-top: 1px solid var(--border);
+    }
+    .sidebar-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ink);
+      margin: 0 0 12px;
+    }
+    .field { margin-bottom: 12px; }
+    .field label {
+      display: block;
+      font-size: 12px;
+      color: var(--ink-muted);
+      margin-bottom: 4px;
+    }
+    .input, .select {
+      width: 100%;
+      padding: 8px 10px;
+      font-size: 13px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: inherit;
+    }
+    .input:focus, .select:focus {
+      outline: none;
+      background: #fff;
+      border-color: var(--accent);
+    }
+    .inline-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .check-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--ink-muted);
+      margin-bottom: 10px;
+      cursor: pointer;
+      line-height: 1.4;
+    }
+    .check-row input { margin-top: 2px; accent-color: var(--accent); }
+    .check-sub { display: block; font-size: 11px; color: var(--ink-subtle); }
+
+    .rule-note {
+      font-size: 11px;
+      color: var(--ink-subtle);
+      line-height: 1.6;
+      margin: 0;
+    }
+    .rule-note strong { color: var(--ink-muted); display: block; margin-top: 8px; }
+    .rule-note strong:first-child { margin-top: 0; }
+
+    /* Main Workspace */
+    .main-wrap {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      height: 56px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+    .breadcrumb {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--ink);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .breadcrumb-parent {
+      color: var(--ink-subtle);
+      font-weight: 400;
+      margin-right: 6px;
+    }
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 14px;
+      min-height: 36px;
+      font-size: 12px;
+      font-weight: 500;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--ink);
+      cursor: pointer;
+      white-space: nowrap;
+      font-family: inherit;
+      transition: background 150ms, border-color 150ms;
+    }
+    .btn:hover:not(:disabled) { background: var(--surface-muted); }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn-primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    .btn-primary:hover:not(:disabled) { background: var(--accent-hover); border-color: var(--accent-hover); }
+    .btn-dark {
+      background: var(--ink);
+      border-color: var(--ink);
+      color: #fff;
+    }
+    .btn-dark:hover:not(:disabled) { background: #1e293b; }
+    .icon-btn {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--surface);
+      color: var(--ink);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .content {
+      max-width: 1440px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 20px 24px 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    /* Toast */
+    .toast {
+      display: none;
+      padding: 10px 14px;
+      border-radius: 6px;
+      background: var(--ink);
+      color: #fff;
+      font-size: 12px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .toast.show { display: flex; }
+
+    /* Mobile quick param bar */
+    .mobile-param-bar {
+      display: none;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 12px;
+      color: var(--ink-muted);
+    }
+
+    /* Upload Strip */
+    .upload-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+    .upload-box {
+      background: var(--surface);
+      border: 1px dashed var(--border-strong);
+      border-radius: 8px;
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 14px;
+      transition: border-color 150ms, background 150ms;
+    }
+    .upload-box.loaded { border-style: solid; border-color: var(--border); }
+    .upload-box.drag { border-color: var(--accent); background: #eff6ff; }
+    .upload-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .upload-kicker {
+      font-size: 12px;
+      color: var(--ink-subtle);
+      margin-bottom: 4px;
+    }
+    .upload-title {
+      font-size: 15px;
+      font-weight: 600;
+      margin: 0;
+    }
+    .upload-foot {
+      padding-top: 12px;
+      border-top: 1px solid var(--surface-muted);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--ink-subtle);
+    }
+    .file-name {
+      font-weight: 600;
+      color: var(--ink);
+      word-break: break-all;
+    }
+    .count-ok { color: var(--green); font-weight: 600; }
+
+    /* KPI Strip */
+    .kpi-strip {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+    .kpi-cell {
+      padding: 16px 20px;
+      border-right: 1px solid var(--border);
+    }
+    .kpi-cell:last-child { border-right: 0; }
+    .kpi-label { font-size: 12px; color: var(--ink-subtle); }
+    .kpi-val-row {
+      margin-top: 6px;
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .kpi-num { font-size: 24px; font-weight: 700; color: var(--ink); }
+    .kpi-num.green { color: var(--green); }
+    .kpi-num.amber { color: var(--amber); }
+    .kpi-sub { font-size: 12px; color: var(--ink-subtle); }
+
+    /* Panel & Toolbar */
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .toolbar {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .seg-tabs {
+      display: inline-flex;
+      gap: 4px;
+      padding: 4px;
+      background: var(--surface-muted);
+      border-radius: 6px;
+      overflow-x: auto;
+      max-width: 100%;
+    }
+    .seg-tab {
+      border: 0;
+      background: transparent;
+      color: var(--ink-muted);
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 500;
+      border-radius: 4px;
+      cursor: pointer;
+      white-space: nowrap;
+      font-family: inherit;
+    }
+    .seg-tab.active {
+      background: var(--surface);
+      color: var(--ink);
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+    }
+    .toolbar-right {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+    .search-input { width: 220px; }
+
+    /* Desktop Data Table */
+    .table-wrap { overflow-x: auto; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 13px;
+    }
+    thead th {
+      background: #f8fafc;
+      border-bottom: 1px solid var(--border);
+      padding: 10px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ink-muted);
+      white-space: nowrap;
+    }
+    tbody td {
+      padding: 12px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    tbody tr:last-child td { border-bottom: 0; }
+    tbody tr.row-selected { background: #eff6ff; }
+    tbody tr.row-muted { background: #f8fafc; color: var(--ink-subtle); }
+    tbody tr:hover { background: #f8fafc; }
+    tbody tr.row-selected:hover { background: #dbeafe66; }
+    .text-right { text-align: right; }
+    .sub-line { font-size: 11px; color: var(--ink-subtle); margin-top: 2px; }
+    .spec-main { font-weight: 600; color: var(--ink); }
+    .status-ok { color: var(--green); font-weight: 600; font-size: 12px; white-space: nowrap; }
+    .status-warn { color: var(--amber); font-weight: 600; font-size: 12px; white-space: nowrap; }
+    .status-err { color: var(--red); font-weight: 600; font-size: 12px; white-space: nowrap; }
+    .status-none { color: var(--ink-subtle); font-weight: 500; font-size: 12px; white-space: nowrap; }
+    .qty-input {
+      width: 78px;
+      padding: 6px 8px;
+      text-align: right;
+      border: 1px solid var(--border-strong);
+      border-radius: 5px;
+      font-size: 13px;
+      font-weight: 600;
+      background: #fff;
+      color: var(--ink);
+    }
+    .qty-input.edited { border-color: var(--accent); background: #eff6ff; color: #1e3a8a; }
+    .qty-input.exceed { border-color: var(--red); background: #fef2f2; color: var(--red); }
+
+    .expand-btn {
+      border: 0;
+      background: transparent;
+      color: var(--ink-subtle);
+      cursor: pointer;
+      padding: 4px 6px;
+      font-size: 12px;
+      border-radius: 4px;
+    }
+    .expand-btn:hover { background: var(--surface-muted); color: var(--ink); }
+    .detail-box {
+      background: #f8fafc;
+      padding: 14px 20px;
+    }
+    .detail-header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ink-muted);
+      margin-bottom: 8px;
+    }
+    .detail-table {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow-x: auto;
+    }
+    .detail-table table { font-size: 12px; }
+    .detail-table th, .detail-table td { padding: 8px 10px; }
+
+    /* Mobile Card List (hidden on desktop) */
+    .mobile-cards { display: none; }
+    .m-card {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .m-card:last-child { border-bottom: 0; }
+    .m-card.row-selected { background: #eff6ff66; }
+    .m-card.row-muted { background: #f8fafc; }
+    .m-card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .m-card-left {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      min-width: 0;
+    }
+    .m-card-left input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      margin-top: 2px;
+      accent-color: var(--accent);
+      flex-shrink: 0;
+    }
+    .m-metrics {
+      margin-top: 10px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      padding: 8px 0;
+      border-top: 1px solid var(--surface-muted);
+      border-bottom: 1px solid var(--surface-muted);
+    }
+    .m-metric-label { font-size: 11px; color: var(--ink-subtle); }
+    .m-metric-val { font-size: 14px; font-weight: 600; margin-top: 2px; }
+    .m-card-foot {
+      margin-top: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .empty-state {
+      padding: 48px 20px;
+      text-align: center;
+    }
+    .empty-state h3 { margin: 0; font-size: 16px; }
+    .empty-state p {
+      margin: 8px auto 20px;
+      max-width: 480px;
+      font-size: 13px;
+      color: var(--ink-subtle);
+      line-height: 1.6;
+    }
+
+    /* Rules Form */
+    .rules-form {
+      padding: 18px 20px;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr auto;
+      gap: 12px;
+      align-items: end;
+    }
+
+    /* Mobile Drawer Overlay */
+    .drawer-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+      z-index: 40;
+    }
+    .drawer-backdrop.open { display: block; }
+    .sidebar-close { display: none; }
+
+    @media (max-width: 1024px) {
+      .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        z-index: 50;
+        width: 286px;
+        max-width: 86vw;
+        transform: translateX(-100%);
+        transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      .sidebar.open { transform: translateX(0); }
+      .icon-btn { display: inline-flex; }
+      .sidebar-close { display: inline-flex; }
+      .mobile-param-bar { display: flex; }
+      .kpi-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .kpi-cell:nth-child(2) { border-right: 0; }
+      .kpi-cell:nth-child(1), .kpi-cell:nth-child(2) { border-bottom: 1px solid var(--border); }
+    }
+
+    @media (max-width: 768px) {
+      .topbar { padding: 0 14px; }
+      .breadcrumb-parent { display: none; }
+      .content { padding: 14px 14px 32px; gap: 14px; }
+      .upload-grid { grid-template-columns: 1fr; }
+      .desktop-table-view { display: none; }
+      .mobile-cards { display: block; }
+      .search-input { width: 100%; }
+      .toolbar-right { width: 100%; }
+      .toolbar-right .search-input { flex: 1; min-width: 160px; }
+      .btn { min-height: 40px; padding: 8px 12px; }
+      .qty-input { min-height: 40px; width: 86px; font-size: 14px; }
+      .rules-form { grid-template-columns: 1fr; }
+      .hide-sm { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="drawer-backdrop" id="drawerBackdrop" onclick="toggleDrawer(false)"></div>
+
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-brand">
+        <span>鍵槽加工排程</span>
+        <button class="btn sidebar-close" type="button" onclick="toggleDrawer(false)">關閉</button>
+      </div>
+
+      <nav class="nav-list" id="navList"></nav>
+
+      <div class="sidebar-section">
+        <h3 class="sidebar-title">排程日期與篩選參數</h3>
+        <div class="field">
+          <label for="paramBaseDate">基準日期 (當日)</label>
+          <input class="input mono" type="date" id="paramBaseDate" />
+        </div>
+        <div class="field">
+          <label for="paramHorizon">加工交期天數 (當日 + N 天)</label>
+          <div class="inline-row">
+            <input class="input mono" style="width:84px" type="number" min="0" max="365" id="paramHorizon" />
+            <span class="mono" style="font-size:12px;color:var(--ink-subtle)" id="cutoffLabel"></span>
+          </div>
+        </div>
+        <label class="check-row">
+          <input type="checkbox" id="paramIncludeOverdue" />
+          <span>包含已逾期交期訂單<span class="check-sub">納入早於基準日之未交急單</span></span>
+        </label>
+        <label class="check-row">
+          <input type="checkbox" id="paramAllowPartial" />
+          <span>允許部分庫存先安排加工<span class="check-sub">關閉時僅自動排入庫存足夠項目</span></span>
+        </label>
+      </div>
+
+      <div class="sidebar-section">
+        <h3 class="sidebar-title">固定欄位抓取規則</h3>
+        <p class="rule-note">
+          <strong>1. 庫存報表</strong>
+          B欄=LEA · E欄=成品倉 · M欄=可用數量
+          <strong>2. 客戶訂單欠貨表</strong>
+          A欄=FG-LSMM · B欄=LEA · G欄尾碼 K/D · M欄欠貨數 · N欄保留數 · Q欄預定交期
+          <strong>3. 淨需加工公式</strong>
+          欠貨數(M) − 訂單保留(N) − 成品可用庫存(M)
+        </p>
+      </div>
+    </aside>
+
+    <div class="main-wrap">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="icon-btn" type="button" aria-label="開啟選單" onclick="toggleDrawer(true)">☰</button>
+          <div class="breadcrumb">
+            <span class="breadcrumb-parent">馬達鍵槽後加工 /</span>
+            <span id="pageTitle">資料匯入與排程</span>
+          </div>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn hide-sm" type="button" onclick="loadSampleData()">載入範例資料</button>
+          <button class="btn btn-primary" type="button" id="btnExportCsv" disabled onclick="exportWorkOrderCsv()">下載加工通知 CSV</button>
+        </div>
+      </header>
+
+      <main class="content">
+        <div class="toast" id="toastBar" role="status">
+          <span id="toastText"></span>
+          <button type="button" onclick="hideToast()" style="background:none;border:0;color:#cbd5e1;cursor:pointer;font-size:12px">關閉</button>
+        </div>
+
+        <div class="mobile-param-bar" id="mobileParamBar">
+          <span id="mobileParamSummary" class="mono"></span>
+          <div class="inline-row">
+            <button class="btn" type="button" onclick="loadSampleData()">範例</button>
+            <button class="btn" type="button" onclick="toggleDrawer(true)">調整參數</button>
+          </div>
+        </div>
+
+        <div id="mainView"></div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    const DEFAULT_SPECIAL_RULES = [{"id":"rule-hg-jr103k-16","machinedSpec":"HG-JR103K-16","baseSpec":"HG-JR103","note":"特殊鍵槽加工（軸徑/鍵槽規格 -16）","isDefault":true},{"id":"rule-hg-jr153k-16","machinedSpec":"HG-JR153K-16","baseSpec":"HG-JR153","note":"特殊鍵槽加工（軸徑/鍵槽規格 -16）","isDefault":true},{"id":"rule-hk-kt43b-kt-s110","machinedSpec":"HK-KT43B-KT-S110","baseSpec":"HK-KT43B-S110","note":"特殊鍵槽加工（KT-S110 煞車款）","isDefault":true},{"id":"rule-hk-kt43-kt-s110","machinedSpec":"HK-KT43-KT-S110","baseSpec":"HK-KT43-S110","note":"特殊鍵槽加工（KT-S110 標準款）","isDefault":true}];
+    const INITIAL_SETTINGS = {"horizonDays":10,"includeOverdue":true,"allowPartialAllocation":false};
+    const STORAGE_KEY = 'motor_keyway_standalone_rules_v1';
+
+    function formatDateISO(d) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return y + '-' + m + '-' + day;
+    }
+    function getTodayISO() { return formatDateISO(new Date()); }
+    function addDaysISO(iso, days) {
+      const p = iso.split('-').map(Number);
+      const d = new Date(p[0], (p[1] || 1) - 1, p[2] || 1);
+      d.setDate(d.getDate() + days);
+      return formatDateISO(d);
+    }
+    function parseISOLocal(iso) {
+      const p = iso.split('-').map(Number);
+      return new Date(p[0], (p[1] || 1) - 1, p[2] || 1);
+    }
+
+    const state = {
+      activeTab: 'schedule',
+      statusFilter: 'all',
+      auditFilter: 'matched',
+      searchQuery: '',
+      expandedIds: new Set(),
+      inventoryWb: null,
+      backorderWb: null,
+      settings: {
+        baseDate: getTodayISO(),
+        horizonDays: INITIAL_SETTINGS.horizonDays,
+        includeOverdue: INITIAL_SETTINGS.includeOverdue,
+        allowPartialAllocation: INITIAL_SETTINGS.allowPartialAllocation,
+      },
+      specialRules: loadRules(),
+      selectedIds: new Set(),
+      confirmedQtys: {},
+      computed: {
+        inventoryRecords: [],
+        backorderRecords: [],
+        items: [],
+        summary: null,
+      },
+    };
+
+    function loadRules() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch (e) {}
+      return DEFAULT_SPECIAL_RULES.map(r => Object.assign({}, r));
+    }
+    function saveRules() {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.specialRules)); } catch (e) {}
+    }
+
+    function escHtml(v) {
+      return String(v == null ? '' : v)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function normalizeStr(v) {
+      if (v === null || v === undefined) return '';
+      return String(v).replace(/\u3000/g, ' ').trim();
+    }
+    function parseNum(v) {
+      if (typeof v === 'number') return isFinite(v) ? v : 0;
+      if (v === null || v === undefined) return 0;
+      const s = String(v).replace(/,/g, '').trim();
+      if (!s) return 0;
+      const n = Number(s);
+      return isFinite(n) ? n : 0;
+    }
+    function cleanSpec(raw) {
+      let s = normalizeStr(raw);
+      s = s.replace(/\s*[（(][^()（）]*[)）]\s*$/g, '').trim();
+      s = s.replace(/\s*[（(][^()（）]*$/g, '').trim();
+      return s;
+    }
+    function normKey(spec) {
+      return cleanSpec(spec).toUpperCase().replace(/\s+/g, '');
+    }
+
+    function parseExcelDate(val) {
+      if (val === null || val === undefined || val === '') return null;
+      if (val instanceof Date && !isNaN(val.getTime())) {
+        return new Date(val.getFullYear(), val.getMonth(), val.getDate());
+      }
+      if (typeof val === 'number' && isFinite(val) && val > 20000 && val < 90000) {
+        const utcDays = Math.floor(val - 25569);
+        const d = new Date(utcDays * 86400 * 1000);
+        return new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+      }
+      const str = normalizeStr(val);
+      if (!str) return null;
+      const ymd = str.match(/^(\d{3,4})[/\-.](\d{1,2})[/\-.](\d{1,2})(?:\s.*)?$/);
+      if (ymd) {
+        let y = Number(ymd[1]), m = Number(ymd[2]), day = Number(ymd[3]);
+        if (y >= 90 && y <= 250) y += 1911;
+        if (m >= 1 && m <= 12 && day >= 1 && day <= 31) return new Date(y, m - 1, day);
+      }
+      const mdy = str.match(/^(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{2,4})(?:\s.*)?$/);
+      if (mdy) {
+        let m = Number(mdy[1]), day = Number(mdy[2]), y = Number(mdy[3]);
+        if (y < 100) y += y >= 70 ? 1900 : 2000;
+        if (m >= 1 && m <= 12 && day >= 1 && day <= 31) return new Date(y, m - 1, day);
+      }
+      const d = new Date(str);
+      if (!isNaN(d.getTime())) return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      return null;
+    }
+
+    function detectHeaderRow(rows, keywords) {
+      const limit = Math.min(rows.length, 6);
+      for (let i = 0; i < limit; i++) {
+        if (!Array.isArray(rows[i])) continue;
+        const joined = rows[i].map(normalizeStr).join('|');
+        const hits = keywords.filter(k => joined.includes(k)).length;
+        if (hits >= 2) return i;
+      }
+      return 0;
+    }
+
+    // Built-in RFC-4180 CSV parser (100% offline capable, supports UTF-8 & Big5)
+    function parseCsvText(text) {
+      const rows = [];
+      let row = [], cell = '', inQuotes = false;
+      for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+        if (inQuotes) {
+          if (ch === '"' && text[i + 1] === '"') { cell += '"'; i++; }
+          else if (ch === '"') { inQuotes = false; }
+          else { cell += ch; }
+        } else {
+          if (ch === '"') { inQuotes = true; }
+          else if (ch === ',') { row.push(cell); cell = ''; }
+          else if (ch === '\r') {
+            if (text[i + 1] === '\n') i++;
+            row.push(cell); rows.push(row); row = []; cell = '';
+          } else if (ch === '\n') {
+            row.push(cell); rows.push(row); row = []; cell = '';
+          } else { cell += ch; }
+        }
+      }
+      if (cell.length > 0 || row.length > 0) { row.push(cell); rows.push(row); }
+      return rows.filter(r => r.some(c => normalizeStr(c) !== ''));
+    }
+
+    async function readSpreadsheetFile(file) {
+      const buffer = await file.arrayBuffer();
+      const ext = (file.name.toLowerCase().split('.').pop() || '');
+      if (ext === 'csv' || ext === 'tsv' || ext === 'txt') {
+        let text;
+        try { text = new TextDecoder('utf-8', { fatal: true }).decode(buffer); }
+        catch (e) {
+          try { text = new TextDecoder('big5').decode(buffer); }
+          catch (e2) { text = new TextDecoder('utf-8').decode(buffer); }
+        }
+        const rows = parseCsvText(text.replace(/^\uFEFF/, ''));
+        return { fileName: file.name, sheetNames: ['CSV'], activeSheet: 'CSV', sheets: { CSV: rows } };
+      }
+      if (typeof XLSX === 'undefined') {
+        throw new Error('離線環境無法載入 Excel 解析元件，請將檔案另存為 CSV 後匯入，或在連線狀態下重新開啟。');
+      }
+      const wb = XLSX.read(buffer, { type: 'array', cellDates: true });
+      const sheets = {};
+      wb.SheetNames.forEach(name => {
+        sheets[name] = XLSX.utils.sheet_to_json(wb.Sheets[name], { header: 1, defval: '', blankrows: false, raw: true });
+      });
+      const activeSheet = wb.SheetNames.find(n => (sheets[n] || []).length > 0) || wb.SheetNames[0] || 'Sheet1';
+      return { fileName: file.name, sheetNames: wb.SheetNames, activeSheet, sheets };
+    }
+
+    function parseInventory(rows) {
+      if (!rows || !rows.length) return [];
+      const h = detectHeaderRow(rows, ['料號', '產品別', '規格', '可用數量', '庫存數']);
+      const list = [];
+      for (let i = h + 1; i < rows.length; i++) {
+        const r = rows[i];
+        if (!Array.isArray(r)) continue;
+        const partNumber = normalizeStr(r[0]);
+        const productLine = normalizeStr(r[1]);
+        const spec = normalizeStr(r[2]);
+        const warehouseCode = normalizeStr(r[3]);
+        const warehouseSummary = normalizeStr(r[4]);
+        if (!partNumber && !productLine && !spec && !warehouseCode && !warehouseSummary) continue;
+        const stockQty = parseNum(r[5]);
+        const reservedQty = parseNum(r[11]);
+        const availableQty = parseNum(r[12]);
+        const okProd = productLine.toUpperCase() === 'LEA';
+        const okWh = warehouseSummary === '成品倉';
+        const reasons = [];
+        if (!okProd) reasons.push('產品別非 LEA (' + (productLine || '空白') + ')');
+        if (!okWh) reasons.push('倉庫摘要非 成品倉 (' + (warehouseSummary || '空白') + ')');
+        list.push({
+          rowNumber: i + 1, partNumber, productLine, spec, normalizedSpec: normKey(spec),
+          warehouseCode, warehouseSummary, stockQty, reservedQty, availableQty,
+          isMatched: okProd && okWh, excludeReason: reasons.join('；'),
+        });
+      }
+      return list;
+    }
+
+    function classifySpec(cleaned) {
+      const key = normKey(cleaned);
+      if (!key) return { category: 'none', baseSpec: '' };
+      const sp = state.specialRules.find(r => normKey(r.machinedSpec) === key);
+      if (sp) return { category: 'special', baseSpec: cleanSpec(sp.baseSpec), specialRuleNote: sp.note || '特殊加工規格對照' };
+      const tail = key.slice(-1);
+      if (tail === 'K' || tail === 'D') {
+        return { category: tail === 'K' ? 'suffix_k' : 'suffix_d', baseSpec: cleaned.trim().slice(0, -1).replace(/-$/, '') };
+      }
+      return { category: 'none', baseSpec: '' };
+    }
+
+    function parseBackorders(rows) {
+      if (!rows || !rows.length) return [];
+      const h = detectHeaderRow(rows, ['出貨倉庫', '產品別', '規格', '欠貨數量', '預定交期']);
+      const baseDt = parseISOLocal(state.settings.baseDate);
+      const cutoffStr = addDaysISO(state.settings.baseDate, state.settings.horizonDays);
+      const cutoffDt = parseISOLocal(cutoffStr);
+      const list = [];
+      for (let i = h + 1; i < rows.length; i++) {
+        const r = rows[i];
+        if (!Array.isArray(r)) continue;
+        const shippingWarehouse = normalizeStr(r[0]);
+        const productLine = normalizeStr(r[1]);
+        const customer = normalizeStr(r[2]);
+        const rawSpec = normalizeStr(r[6]);
+        if (!shippingWarehouse && !productLine && !rawSpec && !customer) continue;
+        const cleanedSpec = cleanSpec(rawSpec);
+        const orderNumber = normalizeStr(r[8]);
+        const lineDetail = normalizeStr(r[9]);
+        const orderQty = parseNum(r[10]);
+        const shippedQty = parseNum(r[11]);
+        const rawBo = normalizeStr(r[12]);
+        const backorderQty = rawBo !== '' ? parseNum(r[12]) : Math.max(0, orderQty - shippedQty);
+        const reservedQty = parseNum(r[13]);
+        const orderDtParsed = parseExcelDate(r[15]);
+        const orderDate = orderDtParsed ? formatDateISO(orderDtParsed) : normalizeStr(r[15]);
+        const deliveryDate = parseExcelDate(r[16]);
+        const deliveryDateStr = deliveryDate ? formatDateISO(deliveryDate) : normalizeStr(r[16]);
+        const cls = classifySpec(cleanedSpec);
+
+        const okWh = shippingWarehouse.toUpperCase() === 'FG-LSMM';
+        const okProd = productLine.toUpperCase() === 'LEA';
+        const okSpec = cls.category !== 'none';
+        const okQty = backorderQty > 0;
+        let isOverdue = false, isWithinWindow = false;
+        if (deliveryDate) {
+          isOverdue = deliveryDate.getTime() < baseDt.getTime();
+          isWithinWindow = state.settings.includeOverdue
+            ? deliveryDate.getTime() <= cutoffDt.getTime()
+            : deliveryDate.getTime() >= baseDt.getTime() && deliveryDate.getTime() <= cutoffDt.getTime();
+        }
+        const reasons = [];
+        if (!okWh) reasons.push('出貨倉庫非 FG-LSMM (' + (shippingWarehouse || '空白') + ')');
+        if (!okProd) reasons.push('產品別非 LEA (' + (productLine || '空白') + ')');
+        if (!okSpec) reasons.push('非尾碼 K/D 或特殊加工規格');
+        if (!okQty) reasons.push('欠貨數量為 0');
+        if (!deliveryDate) reasons.push('無有效預定交期');
+        else if (!isWithinWindow) reasons.push(isOverdue ? '已逾期且未勾選含逾期' : '交期晚於 ' + cutoffStr);
+
+        list.push({
+          rowNumber: i + 1, shippingWarehouse, productLine, customer, rawSpec, cleanedSpec,
+          orderNumber, lineDetail, backorderQty, reservedQty, orderDate, deliveryDateStr,
+          machiningCategory: cls.category, baseSpec: cls.baseSpec, specialRuleNote: cls.specialRuleNote,
+          isOverdue, isWithinWindow, isMatched: okWh && okProd && okSpec && okQty && isWithinWindow,
+          excludeReasons: reasons,
+        });
+      }
+      return list;
+    }
+
+    function catLabel(c) {
+      return c === 'special' ? '特殊加工' : c === 'suffix_k' ? '鍵槽 (K)' : c === 'suffix_d' ? 'D型軸 (D)' : '一般';
+    }
+    function statusLabel(s) {
+      if (s === 'sufficient') return '庫存足夠';
+      if (s === 'partial') return '部分不足';
+      if (s === 'insufficient') return '可用庫存不足';
+      if (s === 'missing_inventory') return '成品倉無此規格';
+      return '無需加工 (現貨/保留足)';
+    }
+
+    function recompute(resetSelections) {
+      const invRows = state.inventoryWb ? (state.inventoryWb.sheets[state.inventoryWb.activeSheet] || []) : [];
+      const boRows = state.backorderWb ? (state.backorderWb.sheets[state.backorderWb.activeSheet] || []) : [];
+      const inventoryRecords = parseInventory(invRows);
+      const backorderRecords = parseBackorders(boRows);
+      const filteredInv = inventoryRecords.filter(r => r.isMatched);
+      const filteredBo = backorderRecords.filter(r => r.isMatched);
+      const cutoffDateStr = addDaysISO(state.settings.baseDate, state.settings.horizonDays);
+
+      const invMap = new Map();
+      filteredInv.forEach(inv => {
+        if (!inv.normalizedSpec) return;
+        const cur = invMap.get(inv.normalizedSpec);
+        if (cur) {
+          cur.availableQty += inv.availableQty;
+          if (inv.partNumber && !cur.partNumbers.includes(inv.partNumber)) cur.partNumbers.push(inv.partNumber);
+        } else {
+          invMap.set(inv.normalizedSpec, { spec: inv.spec, partNumbers: inv.partNumber ? [inv.partNumber] : [], availableQty: inv.availableQty });
+        }
+      });
+
+      const groups = new Map();
+      filteredBo.forEach(ord => {
+        if (ord.machiningCategory === 'none') return;
+        const k = normKey(ord.cleanedSpec);
+        const g = groups.get(k);
+        if (g) {
+          g.orders.push(ord);
+          g.grossDemandQty += ord.backorderQty;
+          g.orderReservedQty += Math.max(0, ord.reservedQty);
+          if (ord.deliveryDateStr && ord.deliveryDateStr < g.earliestDueDate) g.earliestDueDate = ord.deliveryDateStr;
+          if (ord.isOverdue) g.hasOverdueOrder = true;
+        } else {
+          groups.set(k, {
+            machinedSpec: ord.cleanedSpec, baseSpec: ord.baseSpec, machiningCategory: ord.machiningCategory,
+            specialRuleNote: ord.specialRuleNote, orders: [ord], grossDemandQty: ord.backorderQty,
+            orderReservedQty: Math.max(0, ord.reservedQty), earliestDueDate: ord.deliveryDateStr || '9999-12-31',
+            hasOverdueOrder: ord.isOverdue,
+          });
+        }
+      });
+
+      const enriched = Array.from(groups.values()).map(g => {
+        const fin = invMap.get(normKey(g.machinedSpec));
+        const finishedAvailableQty = fin ? fin.availableQty : 0;
+        const finishedDeductibleQty = Math.max(0, finishedAvailableQty);
+        const netDemandQty = Math.max(0, g.grossDemandQty - g.orderReservedQty - finishedDeductibleQty);
+        return Object.assign({}, g, { finishedAvailableQty, finishedDeductibleQty, netDemandQty });
+      }).sort((a, b) => a.earliestDueDate !== b.earliestDueDate ? a.earliestDueDate.localeCompare(b.earliestDueDate) : b.netDemandQty - a.netDemandQty);
+
+      const baseCount = new Map();
+      enriched.forEach(g => {
+        if (g.netDemandQty <= 0) return;
+        const bk = normKey(g.baseSpec);
+        baseCount.set(bk, (baseCount.get(bk) || 0) + 1);
+      });
+
+      const allocated = new Map();
+      const items = enriched.map(g => {
+        const bk = normKey(g.baseSpec);
+        const inv = invMap.get(bk);
+        const baseAvailableQty = inv ? inv.availableQty : 0;
+        const usable = Math.max(0, baseAvailableQty);
+        const allocBefore = allocated.get(bk) || 0;
+        const remain = Math.max(0, usable - allocBefore);
+        let status = 'insufficient', recommendedQty = 0;
+        if (g.netDemandQty <= 0) { status = 'no_machining_needed'; recommendedQty = 0; }
+        else if (!inv) { status = 'missing_inventory'; recommendedQty = 0; }
+        else if (remain >= g.netDemandQty) { status = 'sufficient'; recommendedQty = g.netDemandQty; allocated.set(bk, allocBefore + recommendedQty); }
+        else if (remain > 0) {
+          status = 'partial';
+          if (state.settings.allowPartialAllocation) { recommendedQty = remain; allocated.set(bk, allocBefore + recommendedQty); }
+        }
+        g.orders.sort((a, b) => a.deliveryDateStr.localeCompare(b.deliveryDateStr));
+        return {
+          id: normKey(g.machinedSpec),
+          machinedSpec: g.machinedSpec,
+          baseSpec: inv ? inv.spec : g.baseSpec,
+          basePartNumber: inv && inv.partNumbers.length ? inv.partNumbers.join(' / ') : '—',
+          machiningCategory: g.machiningCategory,
+          specialRuleNote: g.specialRuleNote,
+          grossDemandQty: g.grossDemandQty,
+          orderReservedQty: g.orderReservedQty,
+          finishedAvailableQty: g.finishedAvailableQty,
+          finishedDeductibleQty: g.finishedDeductibleQty,
+          netDemandQty: g.netDemandQty,
+          baseAvailableQty,
+          baseAllocatedBeforeThis: allocBefore,
+          baseRemainingForThis: remain,
+          sharedPoolCount: g.netDemandQty > 0 ? (baseCount.get(bk) || 1) : 0,
+          recommendedQty,
+          status,
+          earliestDueDate: g.earliestDueDate,
+          hasOverdueOrder: g.hasOverdueOrder,
+          orderCount: g.orders.length,
+          orders: g.orders,
+        };
+      });
+
+      state.computed = {
+        inventoryRecords,
+        backorderRecords,
+        items,
+        summary: {
+          totalInventoryRows: inventoryRecords.length,
+          filteredInventoryRows: filteredInv.length,
+          totalBackorderRows: backorderRecords.length,
+          filteredBackorderRows: filteredBo.length,
+          totalMatchedSpecs: items.length,
+          sufficientCount: items.filter(i => i.status === 'sufficient').length,
+          partialCount: items.filter(i => i.status === 'partial').length,
+          insufficientCount: items.filter(i => i.status === 'insufficient' || i.status === 'missing_inventory').length,
+          noMachiningCount: items.filter(i => i.status === 'no_machining_needed').length,
+          totalGross: items.reduce((a, i) => a + i.grossDemandQty, 0),
+          totalNet: items.reduce((a, i) => a + i.netDemandQty, 0),
+          cutoffDateStr,
+        },
+      };
+
+      if (resetSelections) {
+        state.selectedIds = new Set();
+        state.confirmedQtys = {};
+        items.forEach(i => { if (i.recommendedQty > 0) state.selectedIds.add(i.id); });
+      }
+      render();
+    }
+
+    function getSelectedMetrics() {
+      let specCount = 0, totalUnits = 0;
+      state.computed.items.forEach(item => {
+        if (!state.selectedIds.has(item.id)) return;
+        const q = state.confirmedQtys[item.id] !== undefined ? state.confirmedQtys[item.id] : item.recommendedQty;
+        if (q > 0) { specCount++; totalUnits += q; }
+      });
+      return { specCount, totalUnits };
+    }
+
+    function showToast(msg) {
+      document.getElementById('toastText').textContent = msg;
+      document.getElementById('toastBar').classList.add('show');
+      clearTimeout(window._toastTimer);
+      window._toastTimer = setTimeout(hideToast, 4000);
+    }
+    function hideToast() { document.getElementById('toastBar').classList.remove('show'); }
+
+    function toggleDrawer(open) {
+      document.getElementById('sidebar').classList.toggle('open', open);
+      document.getElementById('drawerBackdrop').classList.toggle('open', open);
+    }
+
+    function escapeCsv(v) {
+      const s = v == null ? '' : String(v);
+      return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+    }
+    function downloadCsv(rows, filename) {
+      const body = rows.map(r => r.map(escapeCsv).join(',')).join('\r\n');
+      const blob = new Blob(['\uFEFF' + body], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function exportWorkOrderCsv() {
+      const chosen = state.computed.items.filter(item => {
+        if (!state.selectedIds.has(item.id)) return false;
+        const q = state.confirmedQtys[item.id] !== undefined ? state.confirmedQtys[item.id] : item.recommendedQty;
+        return q > 0;
+      });
+      if (!chosen.length) return;
+      const rows = [[
+        '項次','未加工料號','未加工規格(領料)','加工後規格(目標)','加工類型',
+        '原始欠貨數(M)','訂單保留數(N)','成品可用庫存(M)','淨需加工數','未加工可用庫存(M)',
+        '安排加工數量','最早預定交期','涵蓋訂單數','關聯訂單編號','備註'
+      ]];
+      let total = 0;
+      chosen.forEach((item, idx) => {
+        const finalQty = state.confirmedQtys[item.id] !== undefined ? state.confirmedQtys[item.id] : item.recommendedQty;
+        total += finalQty;
+        const ords = Array.from(new Set(item.orders.map(o => o.orderNumber).filter(Boolean)));
+        const notes = [];
+        if (item.specialRuleNote) notes.push(item.specialRuleNote);
+        if (item.hasOverdueOrder) notes.push('含逾期急單');
+        if (item.sharedPoolCount > 1) notes.push('共用未加工料件(' + item.baseSpec + ')');
+        if (finalQty !== item.recommendedQty) notes.push('人工調整數量(原建議' + item.recommendedQty + ')');
+        rows.push([
+          idx + 1, item.basePartNumber, item.baseSpec, item.machinedSpec, catLabel(item.machiningCategory),
+          item.grossDemandQty, item.orderReservedQty, item.finishedDeductibleQty, item.netDemandQty,
+          item.baseAvailableQty, finalQty, item.earliestDueDate, item.orderCount, ords.join(' / '), notes.join('；')
+        ]);
+      });
+      downloadCsv(rows, '馬達鍵槽後加工通知單_' + state.settings.baseDate.replace(/-/g, '') + '.csv');
+      showToast('已下載倉庫加工通知 CSV（共 ' + chosen.length + ' 項規格、' + total + ' 台）。');
+    }
+
+    function exportShortageCsv() {
+      const list = state.computed.items.filter(i => i.status === 'partial' || i.status === 'insufficient' || i.status === 'missing_inventory');
+      if (!list.length) return;
+      const rows = [[
+        '項次','加工後規格(目標)','未加工規格(領料)','未加工料號','加工類型',
+        '原始欠貨數(M)','訂單保留數(N)','成品可用庫存(M)','淨需加工數','未加工可用庫存(M)',
+        '尚缺未加工數量','庫存狀態','最早預定交期','關聯訂單編號'
+      ]];
+      list.forEach((item, idx) => {
+        const ords = Array.from(new Set(item.orders.map(o => o.orderNumber).filter(Boolean)));
+        rows.push([
+          idx + 1, item.machinedSpec, item.baseSpec, item.basePartNumber, catLabel(item.machiningCategory),
+          item.grossDemandQty, item.orderReservedQty, item.finishedDeductibleQty, item.netDemandQty,
+          item.baseAvailableQty, Math.max(0, item.netDemandQty - item.baseRemainingForThis),
+          statusLabel(item.status), item.earliestDueDate, ords.join(' / ')
+        ]);
+      });
+      downloadCsv(rows, '馬達鍵槽缺料追蹤表_' + state.settings.baseDate.replace(/-/g, '') + '.csv');
+      showToast('已下載缺料追蹤 CSV（共 ' + list.length + ' 項規格）。');
+    }
+
+    function loadSampleData() {
+      const today = state.settings.baseDate;
+      const slash = iso => { const p = iso.split('-'); return p[0] + '/' + Number(p[1]) + '/' + Number(p[2]); };
+      const invRows = [
+        ['料號','產品別','規格','倉庫','倉庫摘要','庫存數','標準成本','庫存成本','平均成本','庫存成本2','最後異動日','保留數量','可用數量'],
+        ['LEA3100J4DC05M','LEA','HG-KR43','FG-LTB1','台南分公司',25,1007,25185,0,0,'10/30/26',0,25],
+        ['FAHGSR102','FA','HG-SR102','FG-LSMM','成品倉',40,12800,512000,0,0,'11/05/26',0,40],
+        ['LEAHGKR43','LEA','HG-KR43','FG-LSMM','成品倉',42,5800,243600,0,0,'11/12/26',10,32],
+        ['LEAHGKR43B','LEA','HG-KR43B','FG-LSMM','成品倉',18,7200,129600,0,0,'11/10/26',2,16],
+        ['LEAHGSR102','LEA','HG-SR102','FG-LSMM','成品倉',14,13200,184800,0,0,'11/08/26',4,10],
+        ['LEAHGSR202','LEA','HG-SR202','FG-LSMM','成品倉',6,18500,111000,0,0,'11/02/26',2,4],
+        ['LEAHGJR103','LEA','HG-JR103','FG-LSMM','成品倉',15,16800,252000,0,0,'11/14/26',3,12],
+        ['LEAHGJR153','LEA','HG-JR153','FG-LSMM','成品倉',11,21500,236500,0,0,'11/11/26',2,9],
+        ['LEAHKKT43BS110','LEA','HK-KT43B-S110','FG-LSMM','成品倉',24,8900,213600,0,0,'11/15/26',4,20],
+        ['LEAHKKT43S110','LEA','HK-KT43-S110','FG-LSMM','成品倉',5,7400,37000,0,0,'11/06/26',2,3],
+        ['LEAHGKR73','LEA','HG-KR73','FG-LSMM','成品倉',4,8100,32400,0,0,'10/13/26',10,-6],
+        ['LEAHGKR43K','LEA','HG-KR43K','FG-LSMM','成品倉',12,6100,73200,0,0,'11/14/26',10,2],
+        ['LEAHGKR43BK','LEA','HG-KR43BK','FG-LSMM','成品倉',10,8800,88000,0,0,'11/15/26',2,8],
+      ];
+      const boRows = [
+        ['出貨倉庫','產品別','客戶','訂單型態','Sales C','產品規格','規格','客戶Id','訂單編號','交易明細','訂單數量','出貨數量','欠貨數量','保留數量','單價','訂單日期','預定交期'],
+        ['FG-LSMM','LEA','喬陞機器股份有限公司','LTN銷售訂單','直賣','LEAHGKR43K','HG-KR43K(訂購品)','4200','138138','12.1',8,'',8,2,7800,addDaysISO(today,-20),slash(addDaysISO(today,3))],
+        ['FG-LSMM','LEA','上銀自動化設備','LTN銷售訂單','直賣','LEAHGKR43K','HG-KR43K','3105','138210','4.1',6,'',6,0,7800,addDaysISO(today,-14),slash(addDaysISO(today,7))],
+        ['FG-LSMM','LEA','均豪精密工業','LTN銷售訂單','直賣','LEAHGSR102D','HG-SR102D','2890','137920','2.1',4,'',4,0,15200,addDaysISO(today,-35),slash(addDaysISO(today,-2))],
+        ['FG-LSMM','LEA','友嘉實業股份有限公司','LTN銷售訂單','直賣','LEAHGJR103K16','HG-JR103K-16','5120','138143','6.1',6,'',6,0,19800,addDaysISO(today,-18),slash(addDaysISO(today,2))],
+        ['FG-LSMM','LEA','東台精機股份有限公司','LTN銷售訂單','直賣','LEAHGJR103K','HG-JR103K','1940','138245','1.1',5,'',5,0,18900,addDaysISO(today,-10),slash(addDaysISO(today,6))],
+        ['FG-LSMM','LEA','程泰機械股份有限公司','LTN銷售訂單','直賣','LEAHGJR153K16','HG-JR153K-16','6012','138251','8.1',5,'',5,0,24500,addDaysISO(today,-15),slash(addDaysISO(today,4))],
+        ['FG-LSMM','LEA','志聖工業股份有限公司','LTN銷售訂單','直賣','LEAHKKT43BKTS110','HK-KT43B-KT-S110','4418','138260','5.1',5,'',5,1,11200,addDaysISO(today,-9),slash(addDaysISO(today,8))],
+        ['FG-LSMM','LEA','大量科技股份有限公司','LTN銷售訂單','直賣','LEAHKKT43BKTS110','HK-KT43B-KT-S110','4780','138277','2.1',3,'',3,0,11200,addDaysISO(today,-7),slash(addDaysISO(today,10))],
+        ['FG-LSMM','LEA','迅得機械股份有限公司','LTN銷售訂單','直賣','LEAHKKT43KTS110','HK-KT43-KT-S110','3312','138282','1.1',7,'',7,1,9600,addDaysISO(today,-11),slash(addDaysISO(today,5))],
+        ['FG-LSMM','LEA','大銀微系統','LTN銷售訂單','直賣','LEAHGSR202K','HG-SR202K','2201','138290','3.1',9,'',9,0,21000,addDaysISO(today,-16),slash(addDaysISO(today,9))],
+        ['FG-LSMM','LEA','亞崴機電股份有限公司','LTN銷售訂單','直賣','LEAHGKR43BK','HG-KR43BK','5501','138320','2.1',10,'',10,2,8600,addDaysISO(today,-5),slash(addDaysISO(today,9))],
+        ['FG-LSMM','LEA','喬陞機器股份有限公司','LTN銷售訂單','直賣','LEAAB6916E224','AB6916-E-224(訂購品)','4200','137628','7.1',4,'',4,0,3630,addDaysISO(today,-30),slash(addDaysISO(today,4))],
+      ];
+      state.inventoryWb = { fileName: '庫存報表_範例.xlsx', sheetNames: ['庫存明細'], activeSheet: '庫存明細', sheets: { 庫存明細: invRows } };
+      state.backorderWb = { fileName: '客戶訂單欠貨一覽表_範例.xlsx', sheetNames: ['工作表1'], activeSheet: '工作表1', sheets: { 工作表1: boRows } };
+      state.activeTab = 'schedule';
+      recompute(true);
+      showToast('已載入範例報表（含標準 K/D 規格、4 項特殊規格與保留數／成品庫存扣除範例）。');
+    }
+
+    async function handleFileInput(kind, file) {
+      if (!file) return;
+      try {
+        const wb = await readSpreadsheetFile(file);
+        if (kind === 'inv') state.inventoryWb = wb;
+        else state.backorderWb = wb;
+        recompute(true);
+      } catch (err) {
+        showToast(err && err.message ? err.message : '檔案讀取失敗，請確認格式為 .xlsx、.xls 或 .csv。');
+      }
+    }
+
+    function switchSheet(kind, sheet) {
+      if (kind === 'inv' && state.inventoryWb) state.inventoryWb.activeSheet = sheet;
+      if (kind === 'bo' && state.backorderWb) state.backorderWb.activeSheet = sheet;
+      recompute(true);
+    }
+    function clearWb(kind) {
+      if (kind === 'inv') state.inventoryWb = null;
+      else state.backorderWb = null;
+      recompute(true);
+    }
+
+    function toggleSelect(id) {
+      if (state.selectedIds.has(id)) {
+        state.selectedIds.delete(id);
+      } else {
+        state.selectedIds.add(id);
+        const item = state.computed.items.find(i => i.id === id);
+        if (item && (state.confirmedQtys[id] !== undefined ? state.confirmedQtys[id] : item.recommendedQty) === 0) {
+          state.confirmedQtys[id] = item.netDemandQty > 0
+            ? (item.baseRemainingForThis > 0 ? Math.min(item.netDemandQty, item.baseRemainingForThis) : item.netDemandQty)
+            : item.grossDemandQty;
+        }
+      }
+      render();
+    }
+    function setQty(id, val) {
+      const n = Math.max(0, Math.floor(Number(val) || 0));
+      state.confirmedQtys[id] = n;
+      if (n > 0) state.selectedIds.add(id); else state.selectedIds.delete(id);
+      render();
+    }
+    function toggleExpand(id) {
+      if (state.expandedIds.has(id)) state.expandedIds.delete(id); else state.expandedIds.add(id);
+      render();
+    }
+
+    function addSpecialRule(e) {
+      e.preventDefault();
+      const m = document.getElementById('newMachinedSpec').value.trim();
+      const b = document.getElementById('newBaseSpec').value.trim();
+      const n = document.getElementById('newRuleNote').value.trim();
+      if (!m || !b) { showToast('請填寫加工後規格與對應未加工規格。'); return; }
+      if (state.specialRules.some(r => normKey(r.machinedSpec) === normKey(m))) {
+        showToast('此加工規格已存在對照表中。'); return;
+      }
+      state.specialRules.push({ id: 'custom-' + Date.now(), machinedSpec: m, baseSpec: b, note: n || '自訂特殊加工規則' });
+      saveRules();
+      recompute(true);
+      showToast('已新增特殊規格對照：' + m + ' → ' + b);
+    }
+    function deleteSpecialRule(id) {
+      state.specialRules = state.specialRules.filter(r => r.id !== id);
+      saveRules();
+      recompute(true);
+    }
+    function resetSpecialRules() {
+      state.specialRules = DEFAULT_SPECIAL_RULES.map(r => Object.assign({}, r));
+      saveRules();
+      recompute(true);
+      showToast('已還原預設特殊規格對照表。');
+    }
+
+    function statusClass(s) {
+      return s === 'sufficient' ? 'status-ok' : s === 'partial' ? 'status-warn' : s === 'no_machining_needed' ? 'status-none' : 'status-err';
+    }
+
+    function renderScheduleTab() {
+      const s = state.computed.summary;
+      const hasBoth = Boolean(state.inventoryWb && state.backorderWb);
+      const items = state.computed.items;
+      const sel = getSelectedMetrics();
+
+      const uploadBox = (kind, kicker, title, hint, wb, total, filtered, fLabel) => {
+        const sheetsHtml = wb && wb.sheetNames.length > 1
+          ? '<select class="select" style="width:auto;padding:4px 8px;font-size:12px" onchange="switchSheet(\'' + kind + '\', this.value)">' +
+            wb.sheetNames.map(n => '<option value="' + escHtml(n) + '"' + (n === wb.activeSheet ? ' selected' : '') + '>' + escHtml(n) + '</option>').join('') + '</select>'
+          : '';
+        return '<div class="upload-box' + (wb ? ' loaded' : '') + '" ondragover="event.preventDefault();this.classList.add(\'drag\')" ondragleave="this.classList.remove(\'drag\')" ondrop="event.preventDefault();this.classList.remove(\'drag\');handleFileInput(\'' + kind + '\', event.dataTransfer.files[0])">' +
+          '<input type="file" id="file_' + kind + '" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleFileInput(\'' + kind + '\', this.files[0]);this.value=\'\'" />' +
+          '<div class="upload-head">' +
+            '<div><div class="upload-kicker">' + kicker + ' · ' + escHtml(hint) + '</div><h2 class="upload-title">' + title + '</h2></div>' +
+            '<div class="inline-row">' +
+              '<button class="btn" type="button" onclick="document.getElementById(\'file_' + kind + '\').click()">' + (wb ? '更換檔案' : '選擇檔案') + '</button>' +
+              (wb ? '<button class="btn" type="button" onclick="clearWb(\'' + kind + '\')">清除</button>' : '') +
+            '</div>' +
+          '</div>' +
+          '<div class="upload-foot">' +
+            (wb
+              ? '<span class="file-name">' + escHtml(wb.fileName) + '</span><div class="inline-row">' + sheetsHtml + '<span class="mono">原始 ' + total + ' / <span class="count-ok">' + fLabel + ' ' + filtered + ' 筆</span></span></div>'
+              : '<span>點擊選擇或拖曳 .xlsx / .xls / .csv 檔案至此處</span><span class="mono">UTF-8 / Big5</span>') +
+          '</div>' +
+        '</div>';
+      };
+
+      const uploadHtml = '<section class="upload-grid">' +
+        uploadBox('inv', '報表 01', '庫存報表', 'B欄=LEA · E欄=成品倉 · M欄=可用數量', state.inventoryWb, s.totalInventoryRows, s.filteredInventoryRows, '符合成品倉') +
+        uploadBox('bo', '報表 02', '客戶訂單欠貨一覽表', 'A欄=FG-LSMM · B欄=LEA · G欄=K/D及特殊 · Q欄≤' + s.cutoffDateStr, state.backorderWb, s.totalBackorderRows, s.filteredBackorderRows, '待排程急單') +
+      '</section>';
+
+      const kpiHtml = '<section class="kpi-strip">' +
+        '<div class="kpi-cell"><div class="kpi-label">庫存足夠可排程規格</div><div class="kpi-val-row mono"><span class="kpi-num green">' + (hasBoth ? s.sufficientCount : '—') + '</span><span class="kpi-sub">/ ' + (hasBoth ? s.totalMatchedSpecs : 0) + ' 項規格</span></div></div>' +
+        '<div class="kpi-cell"><div class="kpi-label">已勾選安排加工總數</div><div class="kpi-val-row mono"><span class="kpi-num">' + (hasBoth ? sel.totalUnits : '—') + '</span><span class="kpi-sub">台 (' + sel.specCount + ' 項通知)</span></div></div>' +
+        '<div class="kpi-cell"><div class="kpi-label">交期內待加工急單</div><div class="kpi-val-row mono"><span class="kpi-num">' + (hasBoth ? s.filteredBackorderRows : '—') + '</span><span class="kpi-sub">筆 (淨需 ' + s.totalNet + ' / 欠貨 ' + s.totalGross + ' 台)</span></div></div>' +
+        '<div class="kpi-cell"><div class="kpi-label">庫存不足 / 無需加工</div><div class="kpi-val-row mono"><span class="kpi-num' + ((s.partialCount + s.insufficientCount) > 0 ? ' amber' : '') + '">' + (hasBoth ? (s.partialCount + s.insufficientCount) : '—') + '</span><span class="kpi-sub">項不足 · ' + s.noMachiningCount + ' 項無需加工</span></div></div>' +
+      '</section>';
+
+      if (!hasBoth) {
+        return uploadHtml + kpiHtml +
+          '<section class="panel empty-state"><h3>尚未完成兩份報表匯入</h3><p>請先於上方匯入「庫存報表」與「客戶訂單欠貨一覽表」，系統將自動依規則篩選並扣除成品庫存(M欄)與訂單保留數(N欄)後計算淨需加工數量。</p><button class="btn btn-dark" type="button" onclick="loadSampleData()">載入範例報表立即預覽</button></section>';
+      }
+
+      const q = state.searchQuery.trim().toLowerCase();
+      const filtered = items.filter(it => {
+        if (state.statusFilter === 'sufficient' && it.status !== 'sufficient') return false;
+        if (state.statusFilter === 'insufficient' && !(it.status === 'partial' || it.status === 'insufficient' || it.status === 'missing_inventory')) return false;
+        if (state.statusFilter === 'no_machining' && it.status !== 'no_machining_needed') return false;
+        if (state.statusFilter === 'special' && it.machiningCategory !== 'special') return false;
+        if (!q) return true;
+        return it.machinedSpec.toLowerCase().includes(q) || it.baseSpec.toLowerCase().includes(q) || it.basePartNumber.toLowerCase().includes(q) ||
+          it.orders.some(o => o.orderNumber.toLowerCase().includes(q) || o.customer.toLowerCase().includes(q));
+      });
+
+      const insuffTotal = s.partialCount + s.insufficientCount;
+      const specTotal = items.filter(i => i.machiningCategory === 'special').length;
+      const tabsHtml = [
+        ['all', '全部 (' + items.length + ')'],
+        ['sufficient', '庫存足夠 (' + s.sufficientCount + ')'],
+        ['insufficient', '庫存不足 (' + insuffTotal + ')'],
+        ['no_machining', '無需加工 (' + s.noMachiningCount + ')'],
+        ['special', '特殊加工 (' + specTotal + ')'],
+      ].map(([k, lbl]) => '<button class="seg-tab' + (state.statusFilter === k ? ' active' : '') + '" type="button" onclick="state.statusFilter=\'' + k + '\';render()">' + lbl + '</button>').join('');
+
+      let rowsHtml = '';
+      let mobileCardsHtml = '';
+
+      filtered.forEach(item => {
+        const checked = state.selectedIds.has(item.id);
+        const expanded = state.expandedIds.has(item.id);
+        const qty = state.confirmedQtys[item.id] !== undefined ? state.confirmedQtys[item.id] : item.recommendedQty;
+        const edited = state.confirmedQtys[item.id] !== undefined && state.confirmedQtys[item.id] !== item.recommendedQty;
+        const exceed = qty > item.baseRemainingForThis && qty > 0;
+        const deficit = Math.max(0, item.netDemandQty - item.baseRemainingForThis);
+        const deductParts = [];
+        if (item.orderReservedQty > 0) deductParts.push('-保' + item.orderReservedQty);
+        if (item.finishedDeductibleQty > 0) deductParts.push('-庫' + item.finishedDeductibleQty);
+        const deductText = deductParts.length ? deductParts.join(' ') : '無扣除';
+        const stText = item.status === 'partial' ? '部分不足 (缺 ' + deficit + ')' : statusLabel(item.status);
+        const rowCls = item.status === 'no_machining_needed' ? 'row-muted' : checked ? 'row-selected' : '';
+        const qCls = 'qty-input mono' + (exceed ? ' exceed' : edited ? ' edited' : '');
+
+        const orderDetailHtml = expanded ? (
+          '<div class="detail-box">' +
+            '<div class="detail-header">' +
+              '<span>關聯客戶欠貨訂單明細 (' + item.orders.length + ' 筆)' + (item.specialRuleNote ? ' · ' + escHtml(item.specialRuleNote) : '') + '</span>' +
+              '<span class="mono">原始欠貨 ' + item.grossDemandQty + ' − 保留(N) ' + item.orderReservedQty + ' − 成品庫存(M) ' + item.finishedDeductibleQty + ' = 淨需加工 ' + item.netDemandQty + ' 台</span>' +
+            '</div>' +
+            '<div class="detail-table"><table><thead><tr><th>訂單編號</th><th>客戶</th><th>原始規格(G)</th><th>預定交期(Q)</th><th class="text-right">欠貨(M)</th><th class="text-right">保留(N)</th></tr></thead><tbody>' +
+            item.orders.map(o => '<tr><td class="mono">' + escHtml(o.orderNumber || '—') + (o.lineDetail ? '-' + escHtml(o.lineDetail) : '') + '</td><td>' + escHtml(o.customer || '—') + '</td><td class="mono">' + escHtml(o.rawSpec) + '</td><td class="mono" style="' + (o.isOverdue ? 'color:var(--red);font-weight:600' : '') + '">' + escHtml(o.deliveryDateStr) + (o.isOverdue ? ' (逾期)' : '') + '</td><td class="text-right mono"><strong>' + o.backorderQty + '</strong></td><td class="text-right mono">' + o.reservedQty + '</td></tr>').join('') +
+            '</tbody></table></div>' +
+          '</div>'
+        ) : '';
+
+        rowsHtml += '<tr class="' + rowCls + '">' +
+          '<td><input type="checkbox"' + (checked ? ' checked' : '') + ' onchange="toggleSelect(\'' + item.id + '\')" /></td>' +
+          '<td><button class="expand-btn" type="button" onclick="toggleExpand(\'' + item.id + '\')">' + (expanded ? '▾' : '▸') + '</button></td>' +
+          '<td><div class="mono spec-main">' + escHtml(item.machinedSpec) + '</div><div class="sub-line">' + catLabel(item.machiningCategory) + ' · <span class="mono">' + item.orderCount + ' 筆訂單</span></div></td>' +
+          '<td><div class="mono">' + escHtml(item.baseSpec) + (item.sharedPoolCount > 1 ? ' <span style="font-size:11px;color:var(--ink-subtle)">共用池</span>' : '') + '</div><div class="sub-line mono">' + escHtml(item.basePartNumber) + '</div></td>' +
+          '<td class="mono" style="white-space:nowrap;' + (item.hasOverdueOrder ? 'color:var(--red);font-weight:600' : '') + '">' + escHtml(item.earliestDueDate) + (item.hasOverdueOrder ? '<div class="sub-line" style="color:var(--red)">含逾期急單</div>' : '') + '</td>' +
+          '<td class="text-right mono"><div>' + item.grossDemandQty + '</div><div class="sub-line">' + deductText + '</div></td>' +
+          '<td class="text-right mono"><strong>' + item.netDemandQty + '</strong></td>' +
+          '<td class="text-right mono"><strong>' + item.baseAvailableQty + '</strong>' + (item.baseAllocatedBeforeThis > 0 ? '<div class="sub-line">餘 ' + item.baseRemainingForThis + '</div>' : '') + '</td>' +
+          '<td><span class="' + statusClass(item.status) + '">' + stText + '</span></td>' +
+          '<td class="text-right"><input class="' + qCls + '" type="number" min="0" value="' + qty + '" onchange="setQty(\'' + item.id + '\', this.value)" />' + (exceed ? '<div class="sub-line" style="color:var(--red)">超過可用數</div>' : '') + '</td>' +
+        '</tr>';
+        if (expanded) rowsHtml += '<tr><td colspan="10" style="padding:0">' + orderDetailHtml + '</td></tr>';
+
+        mobileCardsHtml += '<div class="m-card ' + rowCls + '">' +
+          '<div class="m-card-top">' +
+            '<div class="m-card-left">' +
+              '<input type="checkbox"' + (checked ? ' checked' : '') + ' onchange="toggleSelect(\'' + item.id + '\')" />' +
+              '<div>' +
+                '<div class="mono spec-main">' + escHtml(item.machinedSpec) + '</div>' +
+                '<div class="sub-line">' + catLabel(item.machiningCategory) + ' · 領料 <span class="mono">' + escHtml(item.baseSpec) + '</span></div>' +
+                '<div class="sub-line">最早交期 <span class="mono" style="' + (item.hasOverdueOrder ? 'color:var(--red);font-weight:600' : '') + '">' + escHtml(item.earliestDueDate) + '</span> · ' + item.orderCount + ' 筆訂單</div>' +
+              '</div>' +
+            '</div>' +
+            '<span class="' + statusClass(item.status) + '">' + stText + '</span>' +
+          '</div>' +
+          '<div class="m-metrics mono">' +
+            '<div><div class="m-metric-label">欠貨 / 扣除</div><div class="m-metric-val">' + item.grossDemandQty + '</div><div class="sub-line">' + deductText + '</div></div>' +
+            '<div><div class="m-metric-label">淨需加工</div><div class="m-metric-val">' + item.netDemandQty + '</div></div>' +
+            '<div><div class="m-metric-label">未加工可用</div><div class="m-metric-val">' + item.baseAvailableQty + '</div></div>' +
+          '</div>' +
+          '<div class="m-card-foot">' +
+            '<button class="btn" type="button" onclick="toggleExpand(\'' + item.id + '\')">' + (expanded ? '收合訂單明細' : '展開訂單 (' + item.orderCount + '筆)') + '</button>' +
+            '<label class="inline-row" style="font-size:12px;color:var(--ink-muted)">安排加工 <input class="' + qCls + '" type="number" min="0" value="' + qty + '" onchange="setQty(\'' + item.id + '\', this.value)" /></label>' +
+          '</div>' +
+          (expanded ? '<div style="margin-top:10px">' + orderDetailHtml + '</div>' : '') +
+        '</div>';
+      });
+
+      return uploadHtml + kpiHtml +
+        '<section class="panel">' +
+          '<div class="toolbar">' +
+            '<div class="seg-tabs">' + tabsHtml + '</div>' +
+            '<div class="toolbar-right">' +
+              '<input class="input search-input" type="text" placeholder="搜尋規格、料號、訂單或客戶…" value="' + escHtml(state.searchQuery) + '" oninput="state.searchQuery=this.value;render()" />' +
+              (insuffTotal > 0 ? '<button class="btn" type="button" onclick="exportShortageCsv()">下載缺料追蹤 CSV</button>' : '') +
+            '</div>' +
+          '</div>' +
+          (filtered.length === 0
+            ? '<div class="empty-state"><p>查無符合條件的加工規格。</p></div>'
+            : '<div class="table-wrap desktop-table-view"><table><thead><tr><th style="width:36px"></th><th style="width:32px"></th><th>加工後規格 (目標)</th><th>未加工規格 / 料號</th><th>最早交期</th><th class="text-right">欠貨 / 扣除</th><th class="text-right">淨需加工</th><th class="text-right">未加工可用</th><th>庫存判定</th><th class="text-right">安排加工數</th></tr></thead><tbody>' + rowsHtml + '</tbody></table></div>' +
+              '<div class="mobile-cards">' + mobileCardsHtml + '</div>') +
+        '</section>';
+    }
+
+    function renderBackordersTab() {
+      const list = state.computed.backorderRecords;
+      if (!list.length) return '<section class="panel empty-state"><p>尚未匯入「客戶訂單欠貨一覽表」。</p></section>';
+      const mCount = list.filter(r => r.isMatched).length;
+      const filtered = list.filter(r => state.auditFilter === 'all' ? true : state.auditFilter === 'matched' ? r.isMatched : !r.isMatched).slice(0, 500);
+      return '<section class="panel">' +
+        '<div class="toolbar"><div class="seg-tabs">' +
+          '<button class="seg-tab' + (state.auditFilter === 'matched' ? ' active' : '') + '" onclick="state.auditFilter=\'matched\';render()">符合加工條件 (' + mCount + ')</button>' +
+          '<button class="seg-tab' + (state.auditFilter === 'excluded' ? ' active' : '') + '" onclick="state.auditFilter=\'excluded\';render()">已排除 (' + (list.length - mCount) + ')</button>' +
+          '<button class="seg-tab' + (state.auditFilter === 'all' ? ' active' : '') + '" onclick="state.auditFilter=\'all\';render()">全部 (' + list.length + ')</button>' +
+        '</div></div>' +
+        '<div class="table-wrap"><table><thead><tr><th>列</th><th>倉庫(A)</th><th>產品(B)</th><th>客戶</th><th>訂單</th><th>規格(G)</th><th>交期(Q)</th><th class="text-right">欠貨(M)</th><th class="text-right">保留(N)</th><th>判定</th></tr></thead><tbody>' +
+        filtered.map(r => '<tr><td class="mono">' + r.rowNumber + '</td><td class="mono">' + escHtml(r.shippingWarehouse) + '</td><td class="mono">' + escHtml(r.productLine) + '</td><td>' + escHtml(r.customer) + '</td><td class="mono">' + escHtml(r.orderNumber) + '</td><td class="mono"><strong>' + escHtml(r.rawSpec) + '</strong></td><td class="mono">' + escHtml(r.deliveryDateStr) + '</td><td class="text-right mono"><strong>' + r.backorderQty + '</strong></td><td class="text-right mono">' + r.reservedQty + '</td><td>' + (r.isMatched ? '<span class="status-ok">納入排程</span>' : '<span class="sub-line">' + escHtml(r.excludeReasons.join('；')) + '</span>') + '</td></tr>').join('') +
+        '</tbody></table></div></section>';
+    }
+
+    function renderInventoryTab() {
+      const list = state.computed.inventoryRecords;
+      if (!list.length) return '<section class="panel empty-state"><p>尚未匯入「庫存報表」。</p></section>';
+      const mCount = list.filter(r => r.isMatched).length;
+      const filtered = list.filter(r => state.auditFilter === 'all' ? true : state.auditFilter === 'matched' ? r.isMatched : !r.isMatched).slice(0, 500);
+      return '<section class="panel">' +
+        '<div class="toolbar"><div class="seg-tabs">' +
+          '<button class="seg-tab' + (state.auditFilter === 'matched' ? ' active' : '') + '" onclick="state.auditFilter=\'matched\';render()">LEA 成品倉 (' + mCount + ')</button>' +
+          '<button class="seg-tab' + (state.auditFilter === 'excluded' ? ' active' : '') + '" onclick="state.auditFilter=\'excluded\';render()">已排除 (' + (list.length - mCount) + ')</button>' +
+          '<button class="seg-tab' + (state.auditFilter === 'all' ? ' active' : '') + '" onclick="state.auditFilter=\'all\';render()">全部 (' + list.length + ')</button>' +
+        '</div></div>' +
+        '<div class="table-wrap"><table><thead><tr><th>列</th><th>料號(A)</th><th>產品(B)</th><th>規格(C)</th><th>倉庫摘要(E)</th><th class="text-right">庫存(F)</th><th class="text-right">保留(L)</th><th class="text-right">可用(M)</th><th>狀態</th></tr></thead><tbody>' +
+        filtered.map(r => '<tr><td class="mono">' + r.rowNumber + '</td><td class="mono">' + escHtml(r.partNumber) + '</td><td class="mono">' + escHtml(r.productLine) + '</td><td class="mono"><strong>' + escHtml(r.spec) + '</strong></td><td>' + escHtml(r.warehouseSummary) + '</td><td class="text-right mono">' + r.stockQty + '</td><td class="text-right mono">' + r.reservedQty + '</td><td class="text-right mono"><strong>' + r.availableQty + '</strong></td><td>' + (r.isMatched ? '<span class="status-ok">有效庫存</span>' : '<span class="sub-line">' + escHtml(r.excludeReason) + '</span>') + '</td></tr>').join('') +
+        '</tbody></table></div></section>';
+    }
+
+    function renderRulesTab() {
+      return '<section class="panel">' +
+        '<div class="toolbar"><div><strong>特殊加工規格對照表</strong><div class="sub-line">優先比對下列規格並對應至成品倉未加工馬達</div></div><button class="btn" type="button" onclick="resetSpecialRules()">還原預設規則</button></div>' +
+        '<div class="table-wrap"><table><thead><tr><th>序</th><th>訂單加工規格 (G欄)</th><th>對應未加工規格 (C欄)</th><th>備註</th><th class="text-right">操作</th></tr></thead><tbody>' +
+        state.specialRules.map((r, i) => '<tr><td class="mono">' + String(i + 1).padStart(2, '0') + '</td><td class="mono"><strong>' + escHtml(r.machinedSpec) + '</strong></td><td class="mono" style="color:var(--accent);font-weight:600">' + escHtml(r.baseSpec) + '</td><td>' + escHtml(r.note || '—') + '</td><td class="text-right"><button class="btn" type="button" onclick="deleteSpecialRule(\'' + escHtml(r.id) + '\')">移除</button></td></tr>').join('') +
+        '</tbody></table></div>' +
+        '<form class="rules-form" onsubmit="addSpecialRule(event)">' +
+          '<div><label style="font-size:12px;color:var(--ink-muted);display:block;margin-bottom:4px">訂單加工規格 (G欄)</label><input class="input mono" id="newMachinedSpec" placeholder="例如：HG-JR203K-16" /></div>' +
+          '<div><label style="font-size:12px;color:var(--ink-muted);display:block;margin-bottom:4px">對應未加工規格 (C欄)</label><input class="input mono" id="newBaseSpec" placeholder="例如：HG-JR203" /></div>' +
+          '<div><label style="font-size:12px;color:var(--ink-muted);display:block;margin-bottom:4px">說明備註</label><input class="input" id="newRuleNote" placeholder="選填" /></div>' +
+          '<button class="btn btn-dark" type="submit">新增規則</button>' +
+        '</form>' +
+      '</section>';
+    }
+
+    function render() {
+      const s = state.computed.summary;
+      const sel = getSelectedMetrics();
+      const tabMeta = {
+        schedule: '資料匯入與排程',
+        backorders: '訂單展開明細',
+        inventory: '成品倉可用庫存',
+        rules: '特殊規格對照表',
+      };
+      document.getElementById('pageTitle').textContent = tabMeta[state.activeTab];
+      document.getElementById('cutoffLabel').textContent = '至 ' + s.cutoffDateStr;
+      document.getElementById('mobileParamSummary').textContent =
+        state.settings.baseDate + ' (+' + state.settings.horizonDays + '天至 ' + s.cutoffDateStr + ')';
+
+      const btnCsv = document.getElementById('btnExportCsv');
+      btnCsv.disabled = sel.specCount === 0;
+      btnCsv.textContent = sel.specCount > 0
+        ? '下載 CSV (' + sel.specCount + '項·' + sel.totalUnits + '台)'
+        : '下載加工通知 CSV';
+
+      const navItems = [
+        ['schedule', '資料匯入與排程', (state.inventoryWb && state.backorderWb) ? s.totalMatchedSpecs : null],
+        ['backorders', '訂單展開明細', state.backorderWb ? s.filteredBackorderRows : null],
+        ['inventory', '成品倉可用庫存', state.inventoryWb ? s.filteredInventoryRows : null],
+        ['rules', '特殊規格對照表', state.specialRules.length],
+      ];
+      document.getElementById('navList').innerHTML = navItems.map(([k, lbl, cnt]) =>
+        '<button class="nav-btn' + (state.activeTab === k ? ' active' : '') + '" type="button" onclick="state.activeTab=\'' + k + '\';toggleDrawer(false);render()">' +
+          '<span>' + lbl + '</span>' + (cnt !== null ? '<span class="nav-count mono">' + cnt + '</span>' : '') +
+        '</button>'
+      ).join('');
+
+      const main = document.getElementById('mainView');
+      if (state.activeTab === 'schedule') main.innerHTML = renderScheduleTab();
+      else if (state.activeTab === 'backorders') main.innerHTML = renderBackordersTab();
+      else if (state.activeTab === 'inventory') main.innerHTML = renderInventoryTab();
+      else main.innerHTML = renderRulesTab();
+    }
+
+    // Bind parameter inputs
+    const elDate = document.getElementById('paramBaseDate');
+    const elHorizon = document.getElementById('paramHorizon');
+    const elOverdue = document.getElementById('paramIncludeOverdue');
+    const elPartial = document.getElementById('paramAllowPartial');
+
+    elDate.value = state.settings.baseDate;
+    elHorizon.value = String(state.settings.horizonDays);
+    elOverdue.checked = state.settings.includeOverdue;
+    elPartial.checked = state.settings.allowPartialAllocation;
+
+    elDate.addEventListener('change', () => { if (elDate.value) { state.settings.baseDate = elDate.value; recompute(true); } });
+    elHorizon.addEventListener('input', () => { state.settings.horizonDays = Math.max(0, Math.min(365, Math.floor(Number(elHorizon.value) || 0))); recompute(true); });
+    elOverdue.addEventListener('change', () => { state.settings.includeOverdue = elOverdue.checked; recompute(true); });
+    elPartial.addEventListener('change', () => { state.settings.allowPartialAllocation = elPartial.checked; recompute(true); });
+
+    recompute(true);
+  </script>
+</body>
+</html>
